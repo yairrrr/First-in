@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match Game</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #f0f2f5;
+            --card-back: #2c3e50;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .stats {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 400px;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .card {
+            width: 80px;
+            height: 100px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 8px;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            border: 2px solid #ddd;
+        }
+
+        .card-back {
+            background-color: var(--card-back);
+        }
+
+        .card-front {
+            background-color: white;
+            transform: rotateY(180deg);
+        }
+
+        .matched .card-front {
+            background-color: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 10px 25px;
+            font-size: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Memory Game</h1>
+        <div class="stats">Moves: <span id="move-count">0</span></div>
+        <div class="grid" id="grid"></div>
+        <button onclick="resetGame()">Restart Game</button>
+    </div>
+
+    <script>
+        const symbols = ['🍎', '🍌', '🍇', '🍓', '🍒', '🍍', '🥭', '🍉'];
+        let cards = [];
+        let flippedCards = [];
+        let moves = 0;
+        let matchedCount = 0;
+        let canClick = true;
+
+        const gridElement = document.getElementById('grid');
+        const moveDisplay = document.getElementById('move-count');
+
+        function initGame() {
+            // Create array of 16 cards (8 pairs)
+            const gameCards = [...symbols, ...symbols];
+            // Shuffle
+            cards = gameCards.sort(() => Math.random() - 0.5);
+            
+            gridElement.innerHTML = '';
+            moves = 0;
+            matchedCount = 0;
+            moveDisplay.innerText = moves;
+            flippedCards = [];
+            canClick = true;
+
+            cards.forEach((symbol, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.symbol = symbol;
+                card.dataset.index = index;
+                
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back">?</div>
+                        <div class="card-front">${symbol}</div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => flipCard(card));
+                gridElement.appendChild(card);
+            });
+        }
+
+        function flipCard(cardElement) {
+            if (!canClick || cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) {
+                return;
+            }
+
+            cardElement.classList.add('flipped');
+            flippedCards.push(cardElement);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                moveDisplay.innerText = moves;
+                canClick = false;
+
+                const card1 = flippedCards[0];
+                const card2 = flippedCards[1];
+
+                if (card1.dataset.symbol === card2.dataset.symbol) {
+                    // Match found
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedCount++;
+                    flippedCards = [];
+                    canClick = true;
+                    
+                    if (matchedCount === symbols.length) {
+                        setTimeout(() => alert(`Congratulations! You won in ${moves} moves!`), 500);
+                    }
+                } else {
+                    // No match
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        flippedCards = [];
+                        canClick = true;
+                    }, 1000);
+                }
+            }
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        // Start the game on load
+        initGame();
+    </script>
+</body>
+</html>
