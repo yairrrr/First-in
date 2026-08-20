@@ -108,11 +108,12 @@ function QuestionBlock({ project, chapter }: { project: Project; chapter: Chapte
   // מעבר לפרק אחר מאפס את הבחירה המקומית.
   useEffect(() => setChoice(null), [chapter.id])
 
+  // בפרק שכבר הושלם השאלה נעולה, והתשובה הנכונה מוצגת מסומנת.
+  const locked = chapter.completed
   const answered = choice !== null
-  const correct = answered && choice === question.correctIndex
+  const correct = locked || (answered && choice === question.correctIndex)
 
   function choose(option: number) {
-    // אחרי תשובה נכונה השאלה ננעלת. אחרי שגויה מותר לנסות שוב.
     if (correct) return
     setChoice(option)
     answerQuestion(project.id, chapter.id, option === question.correctIndex)
@@ -124,13 +125,15 @@ function QuestionBlock({ project, chapter }: { project: Project; chapter: Chapte
 
       <div className="options">
         {question.options.map((option, optionIndex) => {
-          const state =
-            choice === optionIndex ? (correct ? 'correct' : 'wrong') : ''
+          const isMarkedCorrect = correct && optionIndex === question.correctIndex
+          const isMarkedWrong = !correct && choice === optionIndex
+          const state = isMarkedCorrect ? 'correct' : isMarkedWrong ? 'wrong' : ''
           return (
             <button
               key={optionIndex}
               type="button"
               className={`option ${state}`}
+              disabled={correct}
               onClick={() => choose(optionIndex)}
             >
               {option}
@@ -141,7 +144,11 @@ function QuestionBlock({ project, chapter }: { project: Project; chapter: Chapte
 
       {correct && (
         <p className="feedback correct-text">
-          נכון. {chapter.attempts === 1 ? 'מהניסיון הראשון.' : `אחרי ${chapter.attempts} ניסיונות.`}
+          {locked && !answered
+            ? 'הפרק הזה כבר הושלם.'
+            : chapter.attempts === 1
+              ? 'נכון. מהניסיון הראשון.'
+              : `נכון. אחרי ${chapter.attempts} ניסיונות.`}
         </p>
       )}
       {answered && !correct && <p className="feedback wrong-text">לא זה. קרא שוב את הקוד ונסה שוב.</p>}

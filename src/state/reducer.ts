@@ -46,6 +46,10 @@ export function reducer(state: AppState, action: Action): AppState {
         const chapter = project.chapters.find((c) => c.id === action.chapterId)
         if (!chapter) return project
 
+        // פרק שהושלם סגור. תשובה חוזרת בו לא נספרת — אחרת ביקור חוזר היה
+        // הורס רטרואקטיבית את מדד "נכון מהניסיון הראשון" של סעיף 9.
+        if (chapter.completed) return project
+
         // כל ניסיון נספר, גם שגוי. המדד בסעיף 9 ב-PRD הוא "נכון מהניסיון הראשון".
         const chapters = project.chapters.map((c) =>
           c.id === action.chapterId
@@ -85,8 +89,10 @@ function updateProject(
   projectId: string,
   change: (project: Project) => Project,
 ): AppState {
-  return {
-    ...state,
-    projects: state.projects.map((p) => (p.id === projectId ? change(p) : p)),
-  }
+  const projects = state.projects.map((p) => (p.id === projectId ? change(p) : p))
+
+  // אם שום פרויקט לא הוחלף בפועל, מוחזר המצב המקורי עצמו.
+  // React משווה זהות, ואובייקט חדש עם תוכן זהה היה גורר רינדור מיותר.
+  const untouched = projects.every((project, index) => project === state.projects[index])
+  return untouched ? state : { ...state, projects }
 }

@@ -192,3 +192,17 @@ describe('מחיקת פרויקט', () => {
     expect(next.projects.map((p) => p.id)).toEqual(['p2'])
   })
 })
+
+describe('פרק שהושלם סגור', () => {
+  it('תשובה חוזרת בפרק שהושלם אינה משנה דבר, כולל את מונה הניסיונות', () => {
+    const ready = buildReadyProject()
+    const done = reducer(ready, {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
+    })
+    const again = reducer(done, {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: false,
+    })
+    expect(again).toBe(done)
+    expect(firstTryStats(again.projects[0]).firstTry).toBe(1)
+  })
+})
