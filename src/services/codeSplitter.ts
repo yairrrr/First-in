@@ -40,6 +40,8 @@ export function splitCode(html: string): Chapter[] {
     title: piece.title,
     code: piece.code,
     completed: false,
+    lesson: null,
+    attempts: 0,
   }))
 }
 

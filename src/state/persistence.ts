@@ -1,4 +1,5 @@
-import type { AppState, Chapter, Project, ProjectStatus } from './types'
+import type { AppState, Chapter, Lesson, Project, ProjectStatus } from './types'
+import { OPTION_COUNT } from '../services/lessonGenerator'
 
 /**
  * שמירת מצב ב-localStorage. אין שרת ואין בסיס נתונים — ראה ARCHITECTURE.
@@ -67,6 +68,8 @@ function toProject(candidate: unknown): Project | null {
   return {
     id: candidate.id,
     prompt: candidate.prompt,
+    // פרויקטים ותיקים נשמרו לפני שהשדה היה קיים. עבורם ברירת המחדל היא המודל.
+    provider: candidate.provider === 'fixture' ? 'fixture' : 'ollama',
     // בנייה שנקטעה באמצע ברענון דף לא תסתיים לעולם, ולכן היא נטענת ככישלון.
     status: toStatus(candidate.status),
     code: typeof candidate.code === 'string' ? candidate.code : '',
@@ -96,8 +99,29 @@ function toChapter(candidate: unknown): Chapter[] {
       title: typeof candidate.title === 'string' ? candidate.title : candidate.id,
       code: candidate.code,
       completed: candidate.completed === true,
+      lesson: toLesson(candidate.lesson),
+      attempts: typeof candidate.attempts === 'number' ? candidate.attempts : 0,
     },
   ]
+}
+
+/** שיעור פגום נזרק ונוצר מחדש בכניסה הבאה לפרק. עדיף על שאלה שבורה. */
+function toLesson(candidate: unknown): Lesson | null {
+  if (!isRecord(candidate)) return null
+  const question = candidate.question
+  if (typeof candidate.explanation !== 'string' || !isRecord(question)) return null
+  if (typeof question.text !== 'string') return null
+  if (!Array.isArray(question.options) || question.options.length !== OPTION_COUNT) return null
+  if (!question.options.every((option) => typeof option === 'string')) return null
+  const correctIndex = question.correctIndex
+  if (typeof correctIndex !== 'number' || correctIndex < 0 || correctIndex >= OPTION_COUNT) {
+    return null
+  }
+
+  return {
+    explanation: candidate.explanation,
+    question: { text: question.text, options: question.options, correctIndex },
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

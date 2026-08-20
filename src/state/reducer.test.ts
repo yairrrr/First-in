@@ -3,13 +3,14 @@ import { POINTS_PER_CHAPTER, initialState, progressPercent, reducer } from './re
 import type { Chapter, Project } from './types'
 
 function makeChapter(id: string): Chapter {
-  return { id, title: `פרק ${id}`, code: '<div></div>', completed: false }
+  return { id, title: `פרק ${id}`, code: '<div></div>', completed: false, lesson: null, attempts: 0 }
 }
 
 function makeProject(): Project {
   return {
     id: 'p1',
     prompt: 'משחק זיכרון',
+    provider: 'fixture',
     status: 'building',
     code: '',
     chapters: [],
@@ -67,7 +68,7 @@ describe('reducer', () => {
     expect(twice.projects[0].points).toBe(POINTS_PER_CHAPTER)
   })
 
-  it('תשובה שגויה לא משנה דבר', () => {
+  it('תשובה שגויה נספרת כניסיון אך אינה מזכה', () => {
     const ready = buildReadyProject()
     const next = reducer(ready, {
       type: 'CHAPTER_ANSWERED',
@@ -75,7 +76,38 @@ describe('reducer', () => {
       chapterId: 'c1',
       correct: false,
     })
-    expect(next).toBe(ready)
+    expect(next.projects[0].points).toBe(0)
+    expect(next.projects[0].chapters[0].completed).toBe(false)
+    expect(next.projects[0].chapters[0].attempts).toBe(1)
+  })
+
+  it('תשובה נכונה אחרי שגויה משלימה את הפרק, והניסיונות נשמרים', () => {
+    const ready = buildReadyProject()
+    const wrong = reducer(ready, {
+      type: 'CHAPTER_ANSWERED',
+      projectId: 'p1',
+      chapterId: 'c1',
+      correct: false,
+    })
+    const right = reducer(wrong, {
+      type: 'CHAPTER_ANSWERED',
+      projectId: 'p1',
+      chapterId: 'c1',
+      correct: true,
+    })
+    expect(right.projects[0].points).toBe(POINTS_PER_CHAPTER)
+    expect(right.projects[0].chapters[0].attempts).toBe(2)
+  })
+
+  it('שומר שיעור שנוצר עבור פרק', () => {
+    const ready = buildReadyProject()
+    const lesson = {
+      explanation: 'הסבר',
+      question: { text: 'שאלה?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 2 },
+    }
+    const next = reducer(ready, { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
+    expect(next.projects[0].chapters[0].lesson).toEqual(lesson)
+    expect(next.projects[0].chapters[1].lesson).toBeNull()
   })
 
   it('מחשב אחוז התקדמות לפי פרקים שהושלמו', () => {

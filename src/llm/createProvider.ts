@@ -1,8 +1,9 @@
 import type { LlmProvider } from './types'
+import type { Project } from '../state/types'
 import { createFixtureProvider } from './fixtureProvider'
 import { createOllamaProvider } from './ollamaProvider'
 
-export type ProviderKind = 'ollama' | 'fixture'
+export type ProviderKind = Project['provider']
 
 /**
  * הבחירה בין מודל אמיתי לתשובה שמורה.

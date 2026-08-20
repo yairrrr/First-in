@@ -220,3 +220,68 @@ a {
   display: flex;
   gap: 16px;
 }
+
+/* --- שיעור --- */
+
+.explanation {
+  margin: 0;
+  padding: 16px;
+  background: #101014;
+  border-radius: 8px;
+  border-inline-start: 3px solid var(--accent);
+  line-height: 1.7;
+}
+
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.question h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option {
+  padding: 12px 16px;
+  background: #101014;
+  color: var(--text);
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.option:hover {
+  border-color: var(--accent);
+}
+
+.option.correct {
+  border-color: #4ade80;
+  background: #14261b;
+}
+
+.option.wrong {
+  border-color: #f87171;
+  background: #2b1517;
+}
+
+.feedback {
+  margin: 0;
+}
+
+.correct-text {
+  color: #4ade80;
+}
+
+.wrong-text {
+  color: #f87171;
+}

@@ -30,21 +30,31 @@ export function reducer(state: AppState, action: Action): AppState {
         error: action.message,
       }))
 
-    case 'CHAPTER_ANSWERED': {
-      if (!action.correct) return state
+    case 'LESSON_LOADED':
+      return updateProject(state, action.projectId, (project) => ({
+        ...project,
+        chapters: project.chapters.map((c) =>
+          c.id === action.chapterId ? { ...c, lesson: action.lesson } : c,
+        ),
+      }))
+
+    case 'CHAPTER_ANSWERED':
       return updateProject(state, action.projectId, (project) => {
         const chapter = project.chapters.find((c) => c.id === action.chapterId)
-        // פרק שכבר הושלם אינו מזכה בנקודות פעם שנייה.
-        if (!chapter || chapter.completed) return project
-        return {
-          ...project,
-          points: project.points + POINTS_PER_CHAPTER,
-          chapters: project.chapters.map((c) =>
-            c.id === action.chapterId ? { ...c, completed: true } : c,
-          ),
-        }
+        if (!chapter) return project
+
+        // כל ניסיון נספר, גם שגוי. המדד בסעיף 9 ב-PRD הוא "נכון מהניסיון הראשון".
+        const chapters = project.chapters.map((c) =>
+          c.id === action.chapterId
+            ? { ...c, attempts: c.attempts + 1, completed: c.completed || action.correct }
+            : c,
+        )
+
+        // נקודות רק על המעבר הראשון מהלא-הושלם להושלם.
+        const earned = action.correct && !chapter.completed ? POINTS_PER_CHAPTER : 0
+
+        return { ...project, points: project.points + earned, chapters }
       })
-    }
   }
 }
 

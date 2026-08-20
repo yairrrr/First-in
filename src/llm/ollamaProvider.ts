@@ -36,6 +36,11 @@ export function createOllamaProvider(options: OllamaOptions = {}): LlmProvider {
         prompt: request.prompt,
         system: request.system,
         stream: false,
+        // gemma4 הוא מודל חושב. בלי לכבות את זה, החשיבה בולעת את התשובה —
+        // דקות של עבודה ואז response ריק. אומת ב-SPIKE-004.
+        think: false,
+        // סכמה מלאה במקום 'json': המודל מאולץ לצורה הנכונה, לא רק ל-JSON כלשהו.
+        ...(request.schema ? { format: request.schema } : {}),
       }
 
       let response: Response

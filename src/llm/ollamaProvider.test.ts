@@ -28,6 +28,7 @@ describe('createOllamaProvider', () => {
       prompt: 'בנה משחק',
       system: 'החזר קוד בלבד',
       stream: false,
+      think: false,
     })
   })
 
@@ -71,5 +72,25 @@ describe('createOllamaProvider', () => {
     const { impl } = stubFetch(() => jsonResponse({ nothing: true }))
     const provider = createOllamaProvider({ fetchImpl: impl })
     await expect(provider.complete({ prompt: 'שלום' })).rejects.toThrow(/פורמט/)
+  })
+})
+
+describe('פלט מובנה', () => {
+  it('שולח סכמה כ-format רק כשהתבקשה', async () => {
+    const { impl, calls } = stubFetch(() => jsonResponse({ response: '{}' }))
+    const provider = createOllamaProvider({ fetchImpl: impl })
+    const schema = { type: 'object' }
+
+    await provider.complete({ prompt: 'שלום' })
+    expect(calls[0].body.format).toBeUndefined()
+
+    await provider.complete({ prompt: 'שלום', schema })
+    expect(calls[1].body.format).toEqual(schema)
+  })
+
+  it('מכבה חשיבה בכל בקשה, כדי שהיא לא תבלע את התשובה', async () => {
+    const { impl, calls } = stubFetch(() => jsonResponse({ response: '' }))
+    await createOllamaProvider({ fetchImpl: impl }).complete({ prompt: 'שלום' })
+    expect(calls[0].body.think).toBe(false)
   })
 })

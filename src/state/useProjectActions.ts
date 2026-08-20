@@ -3,7 +3,8 @@ import { useApp } from './AppContext'
 import { createProvider, type ProviderKind } from '../llm/createProvider'
 import { buildProject } from '../services/projectBuilder'
 import { splitCode } from '../services/codeSplitter'
-import type { Action, Project } from './types'
+import { generateLesson } from '../services/lessonGenerator'
+import type { Action, Chapter, Project } from './types'
 
 /**
  * העבודה האסינכרונית יושבת כאן ולא ב-reducer.
@@ -18,6 +19,7 @@ export function useProjectActions() {
       const project: Project = {
         id: crypto.randomUUID(),
         prompt: prompt.trim(),
+        provider: kind,
         status: 'building',
         code: '',
         chapters: [],
@@ -33,7 +35,36 @@ export function useProjectActions() {
     [dispatch],
   )
 
-  return { startProject }
+  /**
+   * יוצר את השיעור של פרק, אם עוד אין לו.
+   * נקרא כשהמשתמש פותח פרק — לא מראש, ראה ADR-005.
+   */
+  const loadLesson = useCallback(
+    async (project: Project, chapter: Chapter): Promise<string | null> => {
+      if (chapter.lesson) return null
+      try {
+        const lesson = await generateLesson(createProvider(project.provider), {
+          title: chapter.title,
+          code: chapter.code,
+          language: 'he',
+        })
+        dispatch({ type: 'LESSON_LOADED', projectId: project.id, chapterId: chapter.id, lesson })
+        return null
+      } catch (error) {
+        return error instanceof Error ? error.message : 'יצירת השיעור נכשלה'
+      }
+    },
+    [dispatch],
+  )
+
+  const answerQuestion = useCallback(
+    (projectId: string, chapterId: string, correct: boolean) => {
+      dispatch({ type: 'CHAPTER_ANSWERED', projectId, chapterId, correct })
+    },
+    [dispatch],
+  )
+
+  return { startProject, loadLesson, answerQuestion }
 }
 
 async function runBuild(

@@ -17,9 +17,12 @@ function fakeStorage(initial: string | null = null): StateStorage & { value: str
 const readyProject = {
   id: 'p1',
   prompt: 'משחק זיכרון',
+  provider: 'fixture',
   status: 'ready',
   code: '<html></html>',
-  chapters: [{ id: 'ch-1', title: 'מבנה העמוד', code: '<div></div>', completed: true }],
+  chapters: [
+    { id: 'ch-1', title: 'מבנה העמוד', code: '<div></div>', completed: true, lesson: null, attempts: 1 },
+  ],
   points: 10,
   error: null,
   createdAt: '2026-08-20T10:00:00.000Z',
@@ -77,5 +80,38 @@ describe('saveState ו-loadState', () => {
     }
     expect(loadState(blocked)).toEqual({ projects: [] })
     expect(() => saveState(blocked, { projects: [] })).not.toThrow()
+  })
+})
+
+describe('טעינת שיעורים שמורים', () => {
+  const lesson = {
+    explanation: 'הסבר',
+    question: { text: 'שאלה?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 1 },
+  }
+
+  function storedWith(chapterExtras: Record<string, unknown>) {
+    return fakeStorage(
+      JSON.stringify({
+        projects: [
+          {
+            ...readyProject,
+            chapters: [{ id: 'ch-1', title: 'פרק', code: 'x', completed: false, ...chapterExtras }],
+          },
+        ],
+      }),
+    )
+  }
+
+  it('שיעור תקין נטען יחד עם מספר הניסיונות', () => {
+    const chapter = loadState(storedWith({ lesson, attempts: 3 })).projects[0].chapters[0]
+    expect(chapter.lesson).toEqual(lesson)
+    expect(chapter.attempts).toBe(3)
+  })
+
+  it('שיעור פגום נזרק, והפרק עצמו שורד', () => {
+    const broken = { ...lesson, question: { ...lesson.question, correctIndex: 9 } }
+    const chapter = loadState(storedWith({ lesson: broken })).projects[0].chapters[0]
+    expect(chapter.lesson).toBeNull()
+    expect(chapter.id).toBe('ch-1')
   })
 })
