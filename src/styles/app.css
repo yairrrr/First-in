@@ -285,3 +285,28 @@ a {
 .wrong-text {
   color: #f87171;
 }
+
+/* --- פרק שהושלם --- */
+
+.chapter-row.done a {
+  color: #4ade80;
+}
+
+/* וי לפני הכותרת. ::after ולא ::before, כי בכיוון RTL זה הצד הפותח של השורה. */
+.chapter-row.done a::after {
+  content: ' ✓';
+}
+
+.done-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: #14261b;
+  border: 1px solid #4ade80;
+  border-radius: 8px;
+}
+
+.done-banner p {
+  margin: 0;
+}

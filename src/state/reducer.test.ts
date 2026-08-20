@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { POINTS_PER_CHAPTER, initialState, progressPercent, reducer } from './reducer'
+import { POINTS_PER_CHAPTER, firstTryStats, initialState, progressPercent, reducer } from './reducer'
 import type { Chapter, Project } from './types'
 
 function makeChapter(id: string): Chapter {
@@ -155,5 +155,28 @@ describe('כישלון בנייה', () => {
       chapters: [],
     })
     expect(fixed.projects[0].error).toBeNull()
+  })
+})
+
+describe('firstTryStats', () => {
+  it('מבחין בין הצלחה מהניסיון הראשון להצלחה אחרי טעות', () => {
+    const ready = buildReadyProject()
+    // c1 נכון מיד; c2 טעות ואז נכון
+    const afterC1 = reducer(ready, {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
+    })
+    const wrongC2 = reducer(afterC1, {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c2', correct: false,
+    })
+    const doneC2 = reducer(wrongC2, {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c2', correct: true,
+    })
+
+    expect(firstTryStats(doneC2.projects[0])).toEqual({ firstTry: 1, completed: 2 })
+  })
+
+  it('פרויקט שלא נלמד כלל מחזיר אפסים', () => {
+    const ready = buildReadyProject()
+    expect(firstTryStats(ready.projects[0])).toEqual({ firstTry: 0, completed: 0 })
   })
 })

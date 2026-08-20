@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
-import { progressPercent } from '../state/reducer'
+import { firstTryStats, progressPercent } from '../state/reducer'
 import { BidiText } from '../components/BidiText'
 
 /** Your Study — מפת הפרקים, ההתקדמות והנקודות. חדר נפרד, ראה ADR-003. */
@@ -20,10 +20,20 @@ export function StudyPage() {
   }
 
   const percent = progressPercent(project)
+  const { firstTry, completed } = firstTryStats(project)
 
   return (
     <section className="panel">
       <h2>מפת הפרויקט</h2>
+
+      {percent === 100 && (
+        <div className="done-banner">
+          <p>למדת את כל הפרויקט שיצרת.</p>
+          <p className="empty">
+            {project.points} נקודות, {firstTry} מתוך {completed} פרקים נכונים מהניסיון הראשון.
+          </p>
+        </div>
+      )}
 
       <div className="progress">
         <div className="progress-bar">
@@ -31,16 +41,23 @@ export function StudyPage() {
         </div>
         <span className="meta">
           {percent}% נלמדו · {project.points} נקודות
+          {completed > 0 && percent < 100 && ` · ${firstTry}/${completed} מהניסיון הראשון`}
         </span>
       </div>
 
       <ol className="chapter-list">
         {project.chapters.map((chapter, index) => (
-          <li key={chapter.id} className="chapter-row">
+          <li key={chapter.id} className={`chapter-row ${chapter.completed ? 'done' : ''}`}>
             <Link to={`/project/${project.id}/study/${index + 1}`}>
               <BidiText text={chapter.title} />
             </Link>
-            <span className="meta">{chapter.completed ? 'הושלם' : `${chapter.code.length} תווים`}</span>
+            <span className="meta">
+              {chapter.completed
+                ? chapter.attempts === 1
+                  ? 'הושלם מהניסיון הראשון'
+                  : 'הושלם'
+                : `${chapter.code.length} תווים`}
+            </span>
           </li>
         ))}
       </ol>

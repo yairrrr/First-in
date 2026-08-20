@@ -65,6 +65,18 @@ export function progressPercent(project: Project): number {
   return Math.round((done / project.chapters.length) * 100)
 }
 
+/**
+ * המדד הראשי של סעיף 9 ב-PRD: כמה מהפרקים שהושלמו נענו נכון מהניסיון הראשון.
+ * פרק שהושלם עם ניסיון אחד בדיוק — התשובה הראשונה בו הייתה נכונה.
+ */
+export function firstTryStats(project: Project): { firstTry: number; completed: number } {
+  const completed = project.chapters.filter((c) => c.completed)
+  return {
+    firstTry: completed.filter((c) => c.attempts === 1).length,
+    completed: completed.length,
+  }
+}
+
 function updateProject(
   state: AppState,
   projectId: string,
