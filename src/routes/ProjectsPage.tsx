@@ -7,7 +7,7 @@ import { progressPercent } from '../state/reducer'
 /** רשימת הפרויקטים, ונקודת הכניסה: פרומפט חופשי. */
 export function ProjectsPage() {
   const { state } = useApp()
-  const { startProject } = useProjectActions()
+  const { startProject, deleteProject } = useProjectActions()
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState('')
   const [demoMode, setDemoMode] = useState(false)
@@ -58,10 +58,24 @@ export function ProjectsPage() {
               <Link to={`/project/${project.id}`} dir="auto">
                 {project.prompt}
               </Link>
-              <span className="meta">
-                {project.status === 'building' && 'בבנייה'}
-                {project.status === 'failed' && 'נכשל'}
-                {project.status === 'ready' && `${progressPercent(project)}% נלמדו`}
+              <span className="row-side">
+                <span className="meta">
+                  {project.status === 'building' && 'בבנייה'}
+                  {project.status === 'failed' && 'נכשל'}
+                  {project.status === 'ready' && `${progressPercent(project)}% נלמדו`}
+                </span>
+                <button
+                  type="button"
+                  className="delete"
+                  onClick={() => {
+                    // בנייה עולה שתי דקות. מחיקה בטעות לא צריכה להיות בלחיצה אחת.
+                    if (window.confirm('למחוק את הפרויקט הזה? גם ההתקדמות שנצברה תימחק.')) {
+                      deleteProject(project.id)
+                    }
+                  }}
+                >
+                  מחיקה
+                </button>
               </span>
             </li>
           ))}

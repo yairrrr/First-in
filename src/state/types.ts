@@ -55,5 +55,6 @@ export type Action =
   | { type: 'PROJECT_CREATED'; project: Project }
   | { type: 'BUILD_SUCCEEDED'; projectId: string; code: string; chapters: Chapter[] }
   | { type: 'BUILD_FAILED'; projectId: string; message: string }
+  | { type: 'PROJECT_DELETED'; projectId: string }
   | { type: 'LESSON_LOADED'; projectId: string; chapterId: string; lesson: Lesson }
   | { type: 'CHAPTER_ANSWERED'; projectId: string; chapterId: string; correct: boolean }

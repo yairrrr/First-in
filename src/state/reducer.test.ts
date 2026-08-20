@@ -180,3 +180,15 @@ describe('firstTryStats', () => {
     expect(firstTryStats(ready.projects[0])).toEqual({ firstTry: 0, completed: 0 })
   })
 })
+
+describe('מחיקת פרויקט', () => {
+  it('מסיר את הפרויקט ומשאיר את השאר', () => {
+    const one = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
+    const two = reducer(one, {
+      type: 'PROJECT_CREATED',
+      project: { ...makeProject(), id: 'p2' },
+    })
+    const next = reducer(two, { type: 'PROJECT_DELETED', projectId: 'p1' })
+    expect(next.projects.map((p) => p.id)).toEqual(['p2'])
+  })
+})

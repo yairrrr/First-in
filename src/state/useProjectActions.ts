@@ -10,6 +10,9 @@ import type { Action, Chapter, Project } from './types'
  * העבודה האסינכרונית יושבת כאן ולא ב-reducer.
  * ה-reducer נשאר פונקציה טהורה, ולכן אפשר לבדוק אותו בלי מודל ובלי רשת.
  */
+/** בקשות שיעור שרצות כרגע. מודול-גלובלי, כדי לשרוד רכיבים שנהרסים ונבנים. */
+const inFlightLessons = new Set<string>()
+
 export function useProjectActions() {
   const { dispatch } = useApp()
 
@@ -42,6 +45,13 @@ export function useProjectActions() {
   const loadLesson = useCallback(
     async (project: Project, chapter: Chapter): Promise<string | null> => {
       if (chapter.lesson) return null
+
+      // StrictMode מריץ effects פעמיים בפיתוח. בלי ההגנה הזו כל כניסה לפרק
+      // הייתה שולחת למודל שתי בקשות של רבע דקה במקום אחת.
+      const key = `${project.id}/${chapter.id}`
+      if (inFlightLessons.has(key)) return null
+      inFlightLessons.add(key)
+
       try {
         const lesson = await generateLesson(createProvider(project.provider), {
           title: chapter.title,
@@ -52,6 +62,8 @@ export function useProjectActions() {
         return null
       } catch (error) {
         return error instanceof Error ? error.message : 'יצירת השיעור נכשלה'
+      } finally {
+        inFlightLessons.delete(key)
       }
     },
     [dispatch],
@@ -64,7 +76,14 @@ export function useProjectActions() {
     [dispatch],
   )
 
-  return { startProject, loadLesson, answerQuestion }
+  const deleteProject = useCallback(
+    (projectId: string) => {
+      dispatch({ type: 'PROJECT_DELETED', projectId })
+    },
+    [dispatch],
+  )
+
+  return { startProject, loadLesson, answerQuestion, deleteProject }
 }
 
 async function runBuild(

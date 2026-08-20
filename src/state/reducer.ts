@@ -14,6 +14,9 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'PROJECT_CREATED':
       return { ...state, projects: [action.project, ...state.projects] }
 
+    case 'PROJECT_DELETED':
+      return { ...state, projects: state.projects.filter((p) => p.id !== action.projectId) }
+
     case 'BUILD_SUCCEEDED':
       return updateProject(state, action.projectId, (project) => ({
         ...project,

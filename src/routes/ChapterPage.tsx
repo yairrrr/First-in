@@ -67,6 +67,18 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
       <div className="error">
         <p>יצירת השיעור נכשלה.</p>
         <p className="empty">{error}</p>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => {
+            setError(null)
+            void loadLesson(project, chapter).then((failure) => {
+              if (failure) setError(failure)
+            })
+          }}
+        >
+          לנסות שוב
+        </button>
       </div>
     )
   }
