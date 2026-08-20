@@ -21,7 +21,8 @@ export function ProjectPage() {
 
   return (
     <section className="panel">
-      <h2>{project.prompt}</h2>
+      {/* הפרומפט הוא טקסט של המשתמש, ויכול להיות בכל שפה. dir="auto" מונע פיסוק שקופץ. */}
+      <h2 dir="auto">{project.prompt}</h2>
 
       {project.status === 'building' && (
         <div className="waiting">

@@ -55,7 +55,9 @@ export function ProjectsPage() {
         <ul className="project-list">
           {state.projects.map((project) => (
             <li key={project.id} className="project-row">
-              <Link to={`/project/${project.id}`}>{project.prompt}</Link>
+              <Link to={`/project/${project.id}`} dir="auto">
+                {project.prompt}
+              </Link>
               <span className="meta">
                 {project.status === 'building' && 'בבנייה'}
                 {project.status === 'failed' && 'נכשל'}
