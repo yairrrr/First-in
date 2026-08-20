@@ -1,15 +1,57 @@
 import { Link, useParams } from 'react-router-dom'
+import { useApp } from '../state/AppContext'
 
-/** Your Project — כאן המשתמש מתאר, המערכת בונה, והוא רואה מוצר עובד. אין כאן למידה. */
+/**
+ * Your Project — המשתמש מקבל מוצר עובד ורואה אותו רץ. אין כאן למידה.
+ * מסך ההמתנה פשוט בכוונה, ראה ADR-004.
+ */
 export function ProjectPage() {
   const { id } = useParams()
+  const { state } = useApp()
+  const project = state.projects.find((candidate) => candidate.id === id)
+
+  if (!project) {
+    return (
+      <section className="panel">
+        <h2>הפרויקט לא נמצא</h2>
+        <Link to="/">חזרה לרשימה</Link>
+      </section>
+    )
+  }
 
   return (
     <section className="panel">
-      <h2>Your Project</h2>
-      <p className="empty">מזהה פרויקט: {id}</p>
-      <p className="empty">כאן יוצג הפרויקט שנבנה, רץ בתוך הדף.</p>
-      <Link to={`/project/${id}/study`}>מעבר ללמידה</Link>
+      <h2>{project.prompt}</h2>
+
+      {project.status === 'building' && (
+        <div className="waiting">
+          <p>בונה את הפרויקט שלך.</p>
+          <p className="empty">המודל רץ מקומית. זה לוקח בערך שתי דקות.</p>
+        </div>
+      )}
+
+      {project.status === 'failed' && (
+        <div className="error">
+          <p>הבנייה נכשלה.</p>
+          <p className="empty">{project.error}</p>
+          <Link to="/">לנסות שוב</Link>
+        </div>
+      )}
+
+      {project.status === 'ready' && (
+        <>
+          <iframe
+            className="preview"
+            title={project.prompt}
+            srcDoc={project.code}
+            // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
+            sandbox="allow-scripts"
+          />
+          <Link to={`/project/${project.id}/study`}>
+            ללמוד את הקוד הזה — {project.chapters.length} פרקים
+          </Link>
+        </>
+      )}
     </section>
   )
 }

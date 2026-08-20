@@ -21,6 +21,8 @@ export interface Project {
   code: string
   chapters: Chapter[]
   points: number
+  /** הודעת השגיאה שהוצגה למשתמש כשהבנייה נכשלה. */
+  error: string | null
   /** ISO 8601. */
   createdAt: string
 }
@@ -32,5 +34,5 @@ export interface AppState {
 export type Action =
   | { type: 'PROJECT_CREATED'; project: Project }
   | { type: 'BUILD_SUCCEEDED'; projectId: string; code: string; chapters: Chapter[] }
-  | { type: 'BUILD_FAILED'; projectId: string }
+  | { type: 'BUILD_FAILED'; projectId: string; message: string }
   | { type: 'CHAPTER_ANSWERED'; projectId: string; chapterId: string; correct: boolean }

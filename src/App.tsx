@@ -8,7 +8,9 @@ export function App() {
         <Link to="/" className="brand">
           First-In
         </Link>
-        <span className="tagline">Creation First. Understanding Along the Way.</span>
+        <span className="tagline" dir="ltr">
+          Creation First. Understanding Along the Way.
+        </span>
       </header>
       <main className="main">
         <Outlet />

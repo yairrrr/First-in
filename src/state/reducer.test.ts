@@ -14,6 +14,7 @@ function makeProject(): Project {
     code: '',
     chapters: [],
     points: 0,
+    error: null,
     createdAt: '2026-08-20T10:00:00.000Z',
   }
 }
@@ -99,3 +100,28 @@ function buildReadyProject() {
     chapters: [makeChapter('c1'), makeChapter('c2')],
   })
 }
+
+describe('כישלון בנייה', () => {
+  it('שומר את הודעת השגיאה כדי שהמסך יוכל להציג אותה', () => {
+    const created = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
+    const next = reducer(created, {
+      type: 'BUILD_FAILED',
+      projectId: 'p1',
+      message: 'אין תשובה מ-Ollama',
+    })
+    expect(next.projects[0].status).toBe('failed')
+    expect(next.projects[0].error).toBe('אין תשובה מ-Ollama')
+  })
+
+  it('בנייה מוצלחת מנקה שגיאה קודמת', () => {
+    const created = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
+    const failed = reducer(created, { type: 'BUILD_FAILED', projectId: 'p1', message: 'נפל' })
+    const fixed = reducer(failed, {
+      type: 'BUILD_SUCCEEDED',
+      projectId: 'p1',
+      code: '<html></html>',
+      chapters: [],
+    })
+    expect(fixed.projects[0].error).toBeNull()
+  })
+})

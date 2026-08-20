@@ -20,12 +20,14 @@ export function reducer(state: AppState, action: Action): AppState {
         status: 'ready',
         code: action.code,
         chapters: action.chapters,
+        error: null,
       }))
 
     case 'BUILD_FAILED':
       return updateProject(state, action.projectId, (project) => ({
         ...project,
         status: 'failed',
+        error: action.message,
       }))
 
     case 'CHAPTER_ANSWERED': {
