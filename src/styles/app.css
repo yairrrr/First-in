@@ -638,3 +638,33 @@ a {
   font-weight: 700;
   text-decoration: none;
 }
+
+/* --- כלי הפרויקט --- */
+
+.error-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.project-tools {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ghost {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.ghost:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}

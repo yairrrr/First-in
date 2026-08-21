@@ -17,6 +17,17 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'PROJECT_DELETED':
       return { ...state, projects: state.projects.filter((p) => p.id !== action.projectId) }
 
+    case 'BUILD_STARTED':
+      // בנייה חוזרת אחרי כישלון: הפרויקט חוזר לנקודת ההתחלה, אותו פרומפט.
+      return updateProject(state, action.projectId, (project) => ({
+        ...project,
+        status: 'building',
+        code: '',
+        chapters: [],
+        points: 0,
+        error: null,
+      }))
+
     case 'BUILD_SUCCEEDED':
       return updateProject(state, action.projectId, (project) => ({
         ...project,

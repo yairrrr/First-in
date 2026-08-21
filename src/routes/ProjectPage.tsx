@@ -1,5 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
+import { useProjectActions } from '../state/useProjectActions'
+import type { Project } from '../state/types'
 
 /**
  * Your Project — המשתמש מקבל מוצר עובד ורואה אותו רץ. אין כאן למידה.
@@ -8,6 +10,7 @@ import { useApp } from '../state/AppContext'
 export function ProjectPage() {
   const { id } = useParams()
   const { state } = useApp()
+  const { retryBuild } = useProjectActions()
   const project = state.projects.find((candidate) => candidate.id === id)
 
   if (!project) {
@@ -36,7 +39,12 @@ export function ProjectPage() {
         <div className="error">
           <p>הבנייה נכשלה.</p>
           <p className="empty">{project.error}</p>
-          <Link to="/">לנסות שוב</Link>
+          <div className="error-actions">
+            <button type="button" className="primary" onClick={() => retryBuild(project)}>
+              לבנות שוב
+            </button>
+            <Link to="/">חזרה לרשימה</Link>
+          </div>
         </div>
       )}
 
@@ -53,8 +61,27 @@ export function ProjectPage() {
             <span>ללמוד את הקוד הזה</span>
             <span className="meta">{project.chapters.length} פרקים ממתינים</span>
           </Link>
+          <div className="project-tools">
+            <button type="button" className="ghost" onClick={() => downloadProject(project)}>
+              הורדה כקובץ HTML
+            </button>
+          </div>
         </>
       )}
     </section>
   )
+}
+
+/**
+ * מוריד את הפרויקט שנבנה כקובץ HTML עצמאי.
+ * הקוד חי רק ב-localStorage; זו הדרך של המשתמש לקחת אותו איתו.
+ */
+function downloadProject(project: Project): void {
+  const blob = new Blob([project.code], { type: 'text/html' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `first-in-${project.id.slice(0, 8)}.html`
+  link.click()
+  URL.revokeObjectURL(url)
 }

@@ -206,3 +206,15 @@ describe('פרק שהושלם סגור', () => {
     expect(firstTryStats(again.projects[0]).firstTry).toBe(1)
   })
 })
+
+describe('בנייה חוזרת', () => {
+  it('מאפס פרויקט שנכשל לנקודת ההתחלה', () => {
+    const created = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
+    const failed = reducer(created, { type: 'BUILD_FAILED', projectId: 'p1', message: 'נפל' })
+    const retried = reducer(failed, { type: 'BUILD_STARTED', projectId: 'p1' })
+
+    expect(retried.projects[0].status).toBe('building')
+    expect(retried.projects[0].error).toBeNull()
+    expect(retried.projects[0].prompt).toBe('משחק זיכרון')
+  })
+})

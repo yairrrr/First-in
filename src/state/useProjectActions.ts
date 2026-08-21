@@ -80,6 +80,15 @@ export function useProjectActions() {
     [dispatch],
   )
 
+  /** בנייה מחדש של פרויקט שנכשל, עם אותו פרומפט ואותו ספק. */
+  const retryBuild = useCallback(
+    (project: Project) => {
+      dispatch({ type: 'BUILD_STARTED', projectId: project.id })
+      void runBuild(project, project.provider, dispatch)
+    },
+    [dispatch],
+  )
+
   const deleteProject = useCallback(
     (projectId: string) => {
       dispatch({ type: 'PROJECT_DELETED', projectId })
@@ -87,7 +96,7 @@ export function useProjectActions() {
     [dispatch],
   )
 
-  return { startProject, loadLesson, answerQuestion, deleteProject }
+  return { startProject, loadLesson, answerQuestion, deleteProject, retryBuild }
 }
 
 async function runBuild(
