@@ -5,6 +5,7 @@ export function App() {
   return (
     <div className="app">
       <header className="header">
+        <span className="logo-mark" aria-hidden="true">⚡</span>
         <Link to="/" className="brand">
           First-In
         </Link>

@@ -5,6 +5,9 @@ import { useProjectActions } from '../state/useProjectActions'
 import { BidiText } from '../components/BidiText'
 import type { Chapter, Project } from '../state/types'
 
+/** אותיות האפשרויות, בסדר הא"ב. */
+const OPTION_LETTERS = ['א', 'ב', 'ג', 'ד']
+
 /** שלב למידה בודד: קוד, הסבר קצר, ושאלה אמריקאית אחת. */
 export function ChapterPage() {
   const { id, step } = useParams()
@@ -38,7 +41,12 @@ export function ChapterPage() {
         {index > 0 && <Link to={`/project/${project.id}/study/${index}`}>הפרק הקודם</Link>}
         <Link to={`/project/${project.id}/study`}>מפת הפרקים</Link>
         {index + 1 < project.chapters.length && (
-          <Link to={`/project/${project.id}/study/${index + 2}`}>הפרק הבא</Link>
+          <Link
+            to={`/project/${project.id}/study/${index + 2}`}
+            className={chapter.completed ? 'next-link' : ''}
+          >
+            הפרק הבא
+          </Link>
         )}
       </nav>
     </section>
@@ -136,6 +144,9 @@ function QuestionBlock({ project, chapter }: { project: Project; chapter: Chapte
               disabled={correct}
               onClick={() => choose(optionIndex)}
             >
+              <span className="option-letter" aria-hidden="true">
+                {OPTION_LETTERS[optionIndex]}
+              </span>
               {option}
             </button>
           )

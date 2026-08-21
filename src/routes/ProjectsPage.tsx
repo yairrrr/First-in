@@ -21,7 +21,7 @@ export function ProjectsPage() {
 
   return (
     <section className="panel">
-      <h2>מה נבנה היום?</h2>
+      <h2 className="hero-title">מה נבנה היום?</h2>
 
       <form className="build-form" onSubmit={handleSubmit}>
         <textarea

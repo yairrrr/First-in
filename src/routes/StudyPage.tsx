@@ -3,7 +3,7 @@ import { useApp } from '../state/AppContext'
 import { firstTryStats, progressPercent } from '../state/reducer'
 import { BidiText } from '../components/BidiText'
 
-/** Your Study — מפת הפרקים, ההתקדמות והנקודות. חדר נפרד, ראה ADR-003. */
+/** Your Study — מפת המסע: תחנה לכל פרק, קו שמחבר ביניהן. חדר נפרד, ראה ADR-003. */
 export function StudyPage() {
   const { id } = useParams()
   const { state } = useApp()
@@ -21,6 +21,8 @@ export function StudyPage() {
 
   const percent = progressPercent(project)
   const { firstTry, completed } = firstTryStats(project)
+  // התחנה הבאה בתור: הפרק הראשון שטרם הושלם.
+  const nextIndex = project.chapters.findIndex((chapter) => !chapter.completed)
 
   return (
     <section className="panel">
@@ -28,7 +30,7 @@ export function StudyPage() {
 
       {percent === 100 && (
         <div className="done-banner">
-          <p>למדת את כל הפרויקט שיצרת.</p>
+          <p>🏆 למדת את כל הפרויקט שיצרת.</p>
           <p className="empty">
             {project.points} נקודות, {firstTry} מתוך {completed} פרקים נכונים מהניסיון הראשון.
           </p>
@@ -46,20 +48,31 @@ export function StudyPage() {
       </div>
 
       <ol className="chapter-list">
-        {project.chapters.map((chapter, index) => (
-          <li key={chapter.id} className={`chapter-row ${chapter.completed ? 'done' : ''}`}>
-            <Link to={`/project/${project.id}/study/${index + 1}`}>
-              <BidiText text={chapter.title} />
-            </Link>
-            <span className="meta">
-              {chapter.completed
-                ? chapter.attempts === 1
-                  ? 'הושלם מהניסיון הראשון'
-                  : 'הושלם'
-                : `${chapter.code.length} תווים`}
-            </span>
-          </li>
-        ))}
+        {project.chapters.map((chapter, index) => {
+          const rowState = chapter.completed ? 'done' : index === nextIndex ? 'next' : ''
+          return (
+            <li key={chapter.id} className={`chapter-row ${rowState}`}>
+              <span className="node-col" aria-hidden="true">
+                <span className="node">{chapter.completed ? '✓' : index + 1}</span>
+                <span className="trail" />
+              </span>
+              <Link to={`/project/${project.id}/study/${index + 1}`} className="chapter-card">
+                <span className="chapter-title">
+                  <BidiText text={chapter.title} />
+                </span>
+                <span className="meta">
+                  {chapter.completed
+                    ? chapter.attempts === 1
+                      ? 'הושלם מהניסיון הראשון'
+                      : 'הושלם'
+                    : index === nextIndex
+                      ? 'הבא בתור'
+                      : ''}
+                </span>
+              </Link>
+            </li>
+          )
+        })}
       </ol>
 
       <Link to={`/project/${project.id}`}>חזרה לפרויקט</Link>

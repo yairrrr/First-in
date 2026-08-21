@@ -26,8 +26,9 @@ export function ProjectPage() {
 
       {project.status === 'building' && (
         <div className="waiting">
+          <div className="pulse" aria-hidden="true" />
           <p>בונה את הפרויקט שלך.</p>
-          <p className="empty">המודל רץ מקומית. זה לוקח בערך שתי דקות.</p>
+          <p className="empty">המודל רץ מקומית על המחשב שלך. זה לוקח בערך שתי דקות.</p>
         </div>
       )}
 
@@ -48,8 +49,9 @@ export function ProjectPage() {
             // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
             sandbox="allow-scripts"
           />
-          <Link to={`/project/${project.id}/study`}>
-            ללמוד את הקוד הזה — {project.chapters.length} פרקים
+          <Link to={`/project/${project.id}/study`} className="study-cta">
+            <span>ללמוד את הקוד הזה</span>
+            <span className="meta">{project.chapters.length} פרקים ממתינים</span>
           </Link>
         </>
       )}
