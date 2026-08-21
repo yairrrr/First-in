@@ -4,6 +4,7 @@ import {
   LESSON_SYSTEM_PROMPT,
   LessonError,
   buildPrompt,
+  difficultyForProgress,
   generateLesson,
   parseLesson,
 } from './lessonGenerator'
@@ -77,6 +78,7 @@ describe('generateLesson', () => {
       title: 'פונקציה: flipCard',
       code: 'function flipCard() {}',
       language: 'he',
+      difficulty: 'core',
     })
 
     expect(lesson.question.text).toBe(valid.question)
@@ -86,8 +88,32 @@ describe('generateLesson', () => {
   })
 
   it('מנחה לכתוב בעברית ולשמור מזהים באנגלית', () => {
-    const prompt = buildPrompt({ title: 'פרק', code: 'x', language: 'he' })
+    const prompt = buildPrompt({ title: 'פרק', code: 'x', language: 'he', difficulty: 'core' })
     expect(prompt).toContain('Hebrew')
     expect(prompt).toContain('identifiers in English')
+  })
+
+  it('כל מדרגת קושי מזריקה הנחיה משלה לפרומפט', () => {
+    const base = { title: 'פרק', code: 'x', language: 'he' } as const
+    expect(buildPrompt({ ...base, difficulty: 'intro' })).toContain('never written code')
+    expect(buildPrompt({ ...base, difficulty: 'core' })).toContain('computer science student')
+    expect(buildPrompt({ ...base, difficulty: 'deep' })).toContain('What would break'.toLowerCase().slice(1))
+  })
+})
+
+describe('difficultyForProgress', () => {
+  it('מתחיל קליל, מטפס באמצע, ומעמיק בסוף', () => {
+    // פרויקט של 7 פרקים, כמו הדגימות האמיתיות
+    expect(difficultyForProgress(0, 7)).toBe('intro')
+    expect(difficultyForProgress(1, 7)).toBe('intro')
+    expect(difficultyForProgress(2, 7)).toBe('core')
+    expect(difficultyForProgress(4, 7)).toBe('core')
+    expect(difficultyForProgress(5, 7)).toBe('deep')
+    expect(difficultyForProgress(7, 7)).toBe('deep')
+  })
+
+  it('פרויקט ריק או שטרם נלמד הוא תמיד מדרגת פתיחה', () => {
+    expect(difficultyForProgress(0, 0)).toBe('intro')
+    expect(difficultyForProgress(0, 5)).toBe('intro')
   })
 })

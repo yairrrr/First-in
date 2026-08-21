@@ -50,9 +50,50 @@ export interface LessonRequest {
   code: string
   /** שפת ההסבר והשאלה. */
   language: LessonLanguage
+  /** רמת הקושי. נגזרת מההתקדמות של המשתמש, ראה ADR-009. */
+  difficulty: LessonDifficulty
 }
 
 export type LessonLanguage = 'he' | 'en'
+
+/**
+ * שלוש מדרגות קושי. ההנחיה של יאיר: מתחילים קליל ברמת מי שלא יודע קוד,
+ * והרמה עולה ככל שנצברים שלבים ונקודות.
+ */
+export type LessonDifficulty = 'intro' | 'core' | 'deep'
+
+/**
+ * גוזר את המדרגה מחלק הפרקים שכבר הושלמו בפרויקט.
+ * יחס ולא מספר קבוע, כי לפרויקטים יש מספר פרקים שונה (5 עד 12).
+ */
+export function difficultyForProgress(completed: number, total: number): LessonDifficulty {
+  if (total <= 0) return 'intro'
+  const ratio = completed / total
+  if (ratio < 0.25) return 'intro'
+  if (ratio < 0.65) return 'core'
+  return 'deep'
+}
+
+/**
+ * הנחיות הקושי. כולן חייבות לכבד את סעיף 10 ב-PRD: גם שאלה קלה
+ * אסור שתהיה ניתנת למענה בלי לקרוא את הקוד. "קלה" = שפה ומושג, לא כלליות.
+ */
+const DIFFICULTY_PROMPTS: Record<LessonDifficulty, string> = {
+  intro: [
+    'The learner is a complete beginner who has never written code.',
+    'Use everyday language. If a technical term is unavoidable, explain it in a few simple words.',
+    'Ask about what this code visibly does in the app — something the learner can find by reading it slowly.',
+  ].join(' '),
+  core: [
+    'The learner is a computer science student.',
+    'Ask about how this code works: the flow, the state it changes, or why it is written this way.',
+  ].join(' '),
+  deep: [
+    'The learner answered earlier chapters correctly and wants a challenge.',
+    'Ask a harder question: what would break or behave differently if a specific part of this code changed,',
+    'or which edge case this code handles or misses.',
+  ].join(' '),
+}
 
 export async function generateLesson(
   provider: LlmProvider,
@@ -67,7 +108,7 @@ export async function generateLesson(
   return parseLesson(text)
 }
 
-export function buildPrompt({ title, code, language }: LessonRequest): string {
+export function buildPrompt({ title, code, language, difficulty }: LessonRequest): string {
   const inLanguage =
     language === 'he'
       ? 'Write the explanation, the question and all options in Hebrew. Keep code identifiers in English.'
@@ -75,6 +116,7 @@ export function buildPrompt({ title, code, language }: LessonRequest): string {
 
   return [
     `This piece of code is titled: ${title}`,
+    DIFFICULTY_PROMPTS[difficulty],
     inLanguage,
     'The code:',
     code,

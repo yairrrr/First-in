@@ -3,7 +3,7 @@ import { useApp } from './AppContext'
 import { createProvider, type ProviderKind } from '../llm/createProvider'
 import { buildProject } from '../services/projectBuilder'
 import { splitCode } from '../services/codeSplitter'
-import { generateLesson } from '../services/lessonGenerator'
+import { difficultyForProgress, generateLesson } from '../services/lessonGenerator'
 import type { Action, Chapter, Project } from './types'
 
 /**
@@ -53,10 +53,14 @@ export function useProjectActions() {
       inFlightLessons.add(key)
 
       try {
+        // הקושי נקבע ברגע יצירת השיעור, לפי כמה כבר הושלם. שיעור שנשמר
+        // שומר את הרמה שבה נוצר — זו ההתקדמות כפי שהייתה כשהמשתמש הגיע אליו.
+        const completed = project.chapters.filter((c) => c.completed).length
         const lesson = await generateLesson(createProvider(project.provider), {
           title: chapter.title,
           code: chapter.code,
           language: 'he',
+          difficulty: difficultyForProgress(completed, project.chapters.length),
         })
         dispatch({ type: 'LESSON_LOADED', projectId: project.id, chapterId: chapter.id, lesson })
         return null
