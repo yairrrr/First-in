@@ -668,3 +668,139 @@ a {
   color: var(--accent);
   border-color: var(--accent);
 }
+
+/* --- מסך העיקרון --- */
+
+.concept-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px var(--pad);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.concept-label {
+  align-self: flex-start;
+  padding: 3px 12px;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.concept-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.concept-card .primary {
+  align-self: flex-start;
+}
+
+.muted-concept {
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* --- קוד מקופל ברמת פתיחה --- */
+
+.code-details summary {
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.code-details[open] summary {
+  margin-bottom: 10px;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* --- תרגיל ההרכבה --- */
+
+.answer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 58px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-s);
+  /* קוד מרכיבים משמאל לימין, גם בממשק עברי */
+  direction: ltr;
+}
+
+.answer-row.assembled {
+  border-style: solid;
+  border-color: var(--good);
+  background: var(--good-soft);
+}
+
+.answer-row.wrong-row {
+  border-color: var(--bad);
+  animation: shake 0.35s ease;
+}
+
+.answer-hint {
+  color: var(--muted);
+  font-size: 13px;
+  direction: rtl;
+}
+
+.tile-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  direction: ltr;
+}
+
+.tile {
+  padding: 9px 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s, opacity 0.12s;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+.tile:hover:enabled {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.tile-bank .tile:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.placed-tile {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.answer-row.assembled .placed-tile {
+  background: transparent;
+  border-color: var(--good);
+  color: var(--good);
+  cursor: default;
+}

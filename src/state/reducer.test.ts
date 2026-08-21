@@ -102,8 +102,14 @@ describe('reducer', () => {
   it('שומר שיעור שנוצר עבור פרק', () => {
     const ready = buildReadyProject()
     const lesson = {
-      explanation: 'הסבר',
-      question: { text: 'שאלה?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 2 },
+      difficulty: 'core' as const,
+      concept: 'עיקרון',
+      exercise: {
+        kind: 'choice' as const,
+        question: 'שאלה?',
+        options: ['א', 'ב', 'ג', 'ד'],
+        correctIndex: 2,
+      },
     }
     const next = reducer(ready, { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
     expect(next.projects[0].chapters[0].lesson).toEqual(lesson)

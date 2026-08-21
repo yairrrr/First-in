@@ -3,18 +3,39 @@
 
 export type ProjectStatus = 'building' | 'ready' | 'failed'
 
-/** שאלה אמריקאית אחת. המבנה מחייב, ראה סעיף 10 ב-PRD. */
-export interface Question {
-  text: string
+/** שלוש מדרגות קושי, נגזרות מההתקדמות — ראה ADR-009. */
+export type LessonDifficulty = 'intro' | 'core' | 'deep'
+
+/** שאלה אמריקאית. המבנה מחייב, ראה סעיף 10 ב-PRD. */
+export interface ChoiceExercise {
+  kind: 'choice'
+  question: string
   options: string[]
   /** מיקום התשובה הנכונה במערך, החל מאפס. */
   correctIndex: number
 }
 
-/** ההסבר והשאלה של פרק. נוצרים על ידי המודל כשהמשתמש פותח את הפרק. */
+/**
+ * תרגיל הרכבה בסגנון Mimo: משבצות טקסט שנלחצות לפי הסדר
+ * ומרכיבות שורת קוד אמיתית מהפרויקט. ראה ADR-010.
+ */
+export interface AssembleExercise {
+  kind: 'assemble'
+  /** מה השורה שמרכיבים עושה, במילים. */
+  instruction: string
+  /** המשבצות בסדר הנכון. המסך מערבב אותן לפני ההצגה. */
+  tokens: string[]
+}
+
+export type Exercise = ChoiceExercise | AssembleExercise
+
+/** שיעור של פרק: פסקת עיקרון קצרצרה, ואז תרגיל. נוצר כשהמשתמש פותח את הפרק. */
 export interface Lesson {
-  explanation: string
-  question: Question
+  /** הרמה שבה נוצר השיעור. קובעת גם כמה קוד מוצג במסך. */
+  difficulty: LessonDifficulty
+  /** ההסבר הקצר על עיקרון הקוד — המסך הראשון של השיעור. */
+  concept: string
+  exercise: Exercise
 }
 
 /** פרק למידה אחד: פיסת קוד מהפרויקט של המשתמש, ומה שהוא עשה איתה. */

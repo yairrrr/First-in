@@ -85,8 +85,9 @@ describe('saveState ו-loadState', () => {
 
 describe('טעינת שיעורים שמורים', () => {
   const lesson = {
-    explanation: 'הסבר',
-    question: { text: 'שאלה?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 1 },
+    difficulty: 'core',
+    concept: 'עיקרון',
+    exercise: { kind: 'choice', question: 'שאלה?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 1 },
   }
 
   function storedWith(chapterExtras: Record<string, unknown>) {
@@ -109,9 +110,31 @@ describe('טעינת שיעורים שמורים', () => {
   })
 
   it('שיעור פגום נזרק, והפרק עצמו שורד', () => {
-    const broken = { ...lesson, question: { ...lesson.question, correctIndex: 9 } }
+    const broken = {
+      ...lesson,
+      exercise: { kind: 'choice', question: 'ש?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 9 },
+    }
     const chapter = loadState(storedWith({ lesson: broken })).projects[0].chapters[0]
     expect(chapter.lesson).toBeNull()
     expect(chapter.id).toBe('ch-1')
+  })
+
+  it('שיעור הרכבה שמור נטען, כולל המשבצות', () => {
+    const assemble = {
+      difficulty: 'intro',
+      concept: 'עיקרון',
+      exercise: { kind: 'assemble', instruction: 'הרכב', tokens: ['a', 'b', 'c'] },
+    }
+    const chapter = loadState(storedWith({ lesson: assemble })).projects[0].chapters[0]
+    expect(chapter.lesson?.exercise.kind).toBe('assemble')
+  })
+
+  it('שיעור בפורמט הישן נזרק בשקט וייווצר מחדש', () => {
+    const v1 = {
+      explanation: 'הסבר ישן',
+      question: { text: 'ש?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 1 },
+    }
+    const chapter = loadState(storedWith({ lesson: v1 })).projects[0].chapters[0]
+    expect(chapter.lesson).toBeNull()
   })
 })

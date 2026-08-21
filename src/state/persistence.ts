@@ -1,5 +1,5 @@
-import type { AppState, Chapter, Lesson, Project, ProjectStatus } from './types'
-import { OPTION_COUNT } from '../services/lessonGenerator'
+import type { AppState, Chapter, Exercise, Lesson, Project, ProjectStatus } from './types'
+import { MAX_TOKENS, MIN_TOKENS, OPTION_COUNT } from '../services/lessonGenerator'
 
 /**
  * שמירת מצב ב-localStorage. אין שרת ואין בסיס נתונים — ראה ARCHITECTURE.
@@ -105,23 +105,44 @@ function toChapter(candidate: unknown): Chapter[] {
   ]
 }
 
-/** שיעור פגום נזרק ונוצר מחדש בכניסה הבאה לפרק. עדיף על שאלה שבורה. */
+/**
+ * שיעור פגום או בפורמט ישן נזרק ונוצר מחדש בכניסה הבאה לפרק.
+ * עדיף על תרגיל שבור במסך.
+ */
 function toLesson(candidate: unknown): Lesson | null {
   if (!isRecord(candidate)) return null
-  const question = candidate.question
-  if (typeof candidate.explanation !== 'string' || !isRecord(question)) return null
-  if (typeof question.text !== 'string') return null
-  if (!Array.isArray(question.options) || question.options.length !== OPTION_COUNT) return null
-  if (!question.options.every((option) => typeof option === 'string')) return null
-  const correctIndex = question.correctIndex
-  if (typeof correctIndex !== 'number' || correctIndex < 0 || correctIndex >= OPTION_COUNT) {
-    return null
+  if (typeof candidate.concept !== 'string' || !candidate.concept) return null
+  const difficulty = candidate.difficulty
+  if (difficulty !== 'intro' && difficulty !== 'core' && difficulty !== 'deep') return null
+  const exercise = toExercise(candidate.exercise)
+  if (!exercise) return null
+
+  return { difficulty, concept: candidate.concept, exercise }
+}
+
+function toExercise(candidate: unknown): Exercise | null {
+  if (!isRecord(candidate)) return null
+
+  if (candidate.kind === 'choice') {
+    if (typeof candidate.question !== 'string' || !candidate.question) return null
+    if (!Array.isArray(candidate.options) || candidate.options.length !== OPTION_COUNT) return null
+    if (!candidate.options.every((option) => typeof option === 'string')) return null
+    const correctIndex = candidate.correctIndex
+    if (typeof correctIndex !== 'number' || correctIndex < 0 || correctIndex >= OPTION_COUNT) {
+      return null
+    }
+    return { kind: 'choice', question: candidate.question, options: candidate.options, correctIndex }
   }
 
-  return {
-    explanation: candidate.explanation,
-    question: { text: question.text, options: question.options, correctIndex },
+  if (candidate.kind === 'assemble') {
+    if (typeof candidate.instruction !== 'string' || !candidate.instruction) return null
+    if (!Array.isArray(candidate.tokens)) return null
+    if (candidate.tokens.length < MIN_TOKENS || candidate.tokens.length > MAX_TOKENS) return null
+    if (!candidate.tokens.every((token) => typeof token === 'string' && token)) return null
+    return { kind: 'assemble', instruction: candidate.instruction, tokens: candidate.tokens }
   }
+
+  return null
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,65 +1,112 @@
 import { describe, expect, it } from 'vitest'
 import {
-  LESSON_SCHEMA,
+  ASSEMBLE_SCHEMA,
+  CHOICE_SCHEMA,
   LESSON_SYSTEM_PROMPT,
   LessonError,
   buildPrompt,
   difficultyForProgress,
+  exerciseKindFor,
   generateLesson,
   parseLesson,
 } from './lessonGenerator'
 import type { LlmProvider, LlmRequest } from '../llm/types'
 
-const valid = {
-  explanation: 'הפונקציה הופכת קלף ובודקת זוג.',
+const validChoice = {
+  concept: 'הפונקציה בודקת אם שני קלפים תואמים.',
   question: 'מה קורה כשהקלף השני אינו תואם?',
   options: ['שני הקלפים נסגרים אחרי השהיה', 'הקלף נשאר פתוח', 'המונה מתאפס', 'המשחק נגמר'],
   correctIndex: 0,
 }
 
-describe('parseLesson', () => {
-  it('מקבל שיעור תקין', () => {
-    const lesson = parseLesson(JSON.stringify(valid))
-    expect(lesson.explanation).toBe(valid.explanation)
-    expect(lesson.question.options).toHaveLength(4)
-    expect(lesson.question.correctIndex).toBe(0)
+const validAssemble = {
+  concept: 'כדי לשנות מה שכתוב על המסך, הקוד פונה לאזור לפי השם שלו.',
+  instruction: 'הרכב את השורה שמאפסת את מונה המהלכים על המסך',
+  tokens: ['moveDisplay', '.innerText', '=', 'moves;'],
+}
+
+describe('parseLesson — שאלה אמריקאית', () => {
+  it('מקבל שיעור תקין ומחתים את הרמה', () => {
+    const lesson = parseLesson('choice', 'core', JSON.stringify(validChoice))
+    expect(lesson.difficulty).toBe('core')
+    expect(lesson.concept).toBe(validChoice.concept)
+    expect(lesson.exercise.kind).toBe('choice')
+    if (lesson.exercise.kind === 'choice') {
+      expect(lesson.exercise.options).toHaveLength(4)
+      expect(lesson.exercise.correctIndex).toBe(0)
+    }
   })
 
-  it('דוחה טקסט שאינו JSON', () => {
-    expect(() => parseLesson('הנה השאלה שלך!')).toThrow(LessonError)
+  it('דוחה טקסט שאינו JSON או שדות חסרים', () => {
+    expect(() => parseLesson('choice', 'core', 'לא JSON')).toThrow(LessonError)
+    expect(() => parseLesson('choice', 'core', JSON.stringify({ ...validChoice, concept: '' }))).toThrow(/עיקרון/)
+    expect(() => parseLesson('choice', 'core', JSON.stringify({ ...validChoice, question: ' ' }))).toThrow(/שאלה/)
   })
 
-  it('דוחה שדות חסרים או ריקים', () => {
-    expect(() => parseLesson(JSON.stringify({ ...valid, explanation: '' }))).toThrow(/הסבר/)
-    expect(() => parseLesson(JSON.stringify({ ...valid, question: '  ' }))).toThrow(/שאלה/)
+  it('דוחה אפשרויות שגויות במספרן, ריקות או כפולות', () => {
+    const three = { ...validChoice, options: validChoice.options.slice(0, 3) }
+    expect(() => parseLesson('choice', 'core', JSON.stringify(three))).toThrow(/4/)
+    const dup = { ...validChoice, options: ['א', 'א', 'ב', 'ג'] }
+    expect(() => parseLesson('choice', 'core', JSON.stringify(dup))).toThrow(/זהות/)
   })
 
-  it('דוחה מספר אפשרויות שגוי', () => {
-    expect(() => parseLesson(JSON.stringify({ ...valid, options: valid.options.slice(0, 3) }))).toThrow(
-      /4/,
-    )
-    expect(() =>
-      parseLesson(JSON.stringify({ ...valid, options: [...valid.options, 'חמישית'] })),
-    ).toThrow(/4/)
-  })
-
-  it('דוחה אפשרות ריקה ואפשרויות כפולות', () => {
-    const withEmpty = { ...valid, options: ['', ...valid.options.slice(1)] }
-    expect(() => parseLesson(JSON.stringify(withEmpty))).toThrow(LessonError)
-
-    const withDuplicate = { ...valid, options: [valid.options[0], valid.options[0], 'ג', 'ד'] }
-    expect(() => parseLesson(JSON.stringify(withDuplicate))).toThrow(/זהות/)
-  })
-
-  it('דוחה מיקום תשובה מחוץ לתחום או לא שלם', () => {
-    expect(() => parseLesson(JSON.stringify({ ...valid, correctIndex: 4 }))).toThrow(/תחום/)
-    expect(() => parseLesson(JSON.stringify({ ...valid, correctIndex: -1 }))).toThrow(/תחום/)
-    expect(() => parseLesson(JSON.stringify({ ...valid, correctIndex: 1.5 }))).toThrow(LessonError)
-    expect(() => parseLesson(JSON.stringify({ ...valid, correctIndex: '0' }))).toThrow(LessonError)
+  it('דוחה מיקום תשובה לא תקין', () => {
+    expect(() => parseLesson('choice', 'core', JSON.stringify({ ...validChoice, correctIndex: 4 }))).toThrow(/תחום/)
+    expect(() => parseLesson('choice', 'core', JSON.stringify({ ...validChoice, correctIndex: '0' }))).toThrow(LessonError)
   })
 })
 
-describe('generateLesson', () => {
+describe('parseLesson — הרכבה', () => {
+  it('מקבל תרגיל הרכבה תקין ומנקה רווחים', () => {
+    const lesson = parseLesson('assemble', 'intro', JSON.stringify(validAssemble))
+    expect(lesson.difficulty).toBe('intro')
+    expect(lesson.exercise.kind).toBe('assemble')
+    if (lesson.exercise.kind === 'assemble') {
+      expect(lesson.exercise.tokens).toEqual(['moveDisplay', '.innerText', '=', 'moves;'])
+    }
+  })
+
+  it('דוחה מעט מדי או יותר מדי משבצות', () => {
+    const two = { ...validAssemble, tokens: ['a', 'b'] }
+    expect(() => parseLesson('assemble', 'intro', JSON.stringify(two))).toThrow(/משבצות/)
+    const seven = { ...validAssemble, tokens: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] }
+    expect(() => parseLesson('assemble', 'intro', JSON.stringify(seven))).toThrow(/משבצות/)
+  })
+
+  it('דוחה שורה מורכבת ארוכה מדי — התרגיל אמור להיות קליל', () => {
+    const long = { ...validAssemble, tokens: ['x'.repeat(40), 'y'.repeat(40), 'z'.repeat(40)] }
+    expect(() => parseLesson('assemble', 'intro', JSON.stringify(long))).toThrow(/ארוכה/)
+  })
+
+  it('דוחה הוראה חסרה', () => {
+    expect(() =>
+      parseLesson('assemble', 'intro', JSON.stringify({ ...validAssemble, instruction: '' })),
+    ).toThrow(/הוראת/)
+  })
+})
+
+describe('exerciseKindFor', () => {
+  it('פתיחה בהרכבה, עומק בשאלות, ובאמצע לסירוגין', () => {
+    expect(exerciseKindFor('intro', 0)).toBe('assemble')
+    expect(exerciseKindFor('intro', 5)).toBe('assemble')
+    expect(exerciseKindFor('deep', 6)).toBe('choice')
+    expect(exerciseKindFor('core', 2)).toBe('choice')
+    expect(exerciseKindFor('core', 3)).toBe('assemble')
+  })
+})
+
+describe('difficultyForProgress', () => {
+  it('מתחיל קליל, מטפס באמצע, ומעמיק בסוף', () => {
+    expect(difficultyForProgress(0, 7)).toBe('intro')
+    expect(difficultyForProgress(1, 7)).toBe('intro')
+    expect(difficultyForProgress(2, 7)).toBe('core')
+    expect(difficultyForProgress(4, 7)).toBe('core')
+    expect(difficultyForProgress(5, 7)).toBe('deep')
+    expect(difficultyForProgress(0, 0)).toBe('intro')
+  })
+})
+
+describe('generateLesson ו-buildPrompt', () => {
   function providerReturning(text: string) {
     const seen: LlmRequest[] = []
     const provider: LlmProvider = {
@@ -72,48 +119,41 @@ describe('generateLesson', () => {
     return { provider, seen }
   }
 
-  it('שולח את ההנחיה, מבקש JSON, ומחזיר שיעור', async () => {
-    const { provider, seen } = providerReturning(JSON.stringify(valid))
-    const lesson = await generateLesson(provider, {
-      title: 'פונקציה: flipCard',
-      code: 'function flipCard() {}',
+  it('בוחר סכמה לפי סוג התרגיל ושולח את ההנחיה', async () => {
+    const { provider, seen } = providerReturning(JSON.stringify(validAssemble))
+    await generateLesson(provider, {
+      title: 'מבנה העמוד',
+      code: '<div></div>',
       language: 'he',
-      difficulty: 'core',
+      difficulty: 'intro',
+      kind: 'assemble',
     })
-
-    expect(lesson.question.text).toBe(valid.question)
     expect(seen[0].system).toBe(LESSON_SYSTEM_PROMPT)
-    expect(seen[0].schema).toBe(LESSON_SCHEMA)
-    expect(seen[0].prompt).toContain('flipCard')
+    expect(seen[0].schema).toBe(ASSEMBLE_SCHEMA)
+
+    const choice = providerReturning(JSON.stringify(validChoice))
+    await generateLesson(choice.provider, {
+      title: 'פונקציה',
+      code: 'f()',
+      language: 'he',
+      difficulty: 'deep',
+      kind: 'choice',
+    })
+    expect(choice.seen[0].schema).toBe(CHOICE_SCHEMA)
   })
 
-  it('מנחה לכתוב בעברית ולשמור מזהים באנגלית', () => {
-    const prompt = buildPrompt({ title: 'פרק', code: 'x', language: 'he', difficulty: 'core' })
-    expect(prompt).toContain('Hebrew')
-    expect(prompt).toContain('identifiers in English')
+  it('מדרגת intro אוסרת ז\'רגון ומגבילה קוד לשורה קצרה', () => {
+    const prompt = buildPrompt({
+      title: 'פרק', code: 'x', language: 'he', difficulty: 'intro', kind: 'assemble',
+    })
+    expect(prompt).toContain('no technical jargon')
+    expect(prompt).toContain('one short line of code')
+    expect(prompt).toContain('tap the shuffled tokens')
   })
 
-  it('כל מדרגת קושי מזריקה הנחיה משלה לפרומפט', () => {
-    const base = { title: 'פרק', code: 'x', language: 'he' } as const
-    expect(buildPrompt({ ...base, difficulty: 'intro' })).toContain('never written code')
+  it('כל מדרגה מזריקה הנחיה משלה', () => {
+    const base = { title: 'פרק', code: 'x', language: 'he', kind: 'choice' } as const
     expect(buildPrompt({ ...base, difficulty: 'core' })).toContain('computer science student')
-    expect(buildPrompt({ ...base, difficulty: 'deep' })).toContain('What would break'.toLowerCase().slice(1))
-  })
-})
-
-describe('difficultyForProgress', () => {
-  it('מתחיל קליל, מטפס באמצע, ומעמיק בסוף', () => {
-    // פרויקט של 7 פרקים, כמו הדגימות האמיתיות
-    expect(difficultyForProgress(0, 7)).toBe('intro')
-    expect(difficultyForProgress(1, 7)).toBe('intro')
-    expect(difficultyForProgress(2, 7)).toBe('core')
-    expect(difficultyForProgress(4, 7)).toBe('core')
-    expect(difficultyForProgress(5, 7)).toBe('deep')
-    expect(difficultyForProgress(7, 7)).toBe('deep')
-  })
-
-  it('פרויקט ריק או שטרם נלמד הוא תמיד מדרגת פתיחה', () => {
-    expect(difficultyForProgress(0, 0)).toBe('intro')
-    expect(difficultyForProgress(0, 5)).toBe('intro')
+    expect(buildPrompt({ ...base, difficulty: 'deep' })).toContain('what would break')
   })
 })

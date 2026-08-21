@@ -1,39 +1,111 @@
 import type { LlmProvider } from '../llm/types'
-import type { Lesson } from '../state/types'
+import type {
+  AssembleExercise,
+  ChoiceExercise,
+  Lesson,
+  LessonDifficulty,
+} from '../state/types'
 
 /**
- * lessonGenerator — פרק קוד אחד נכנס, הסבר ושאלה אמריקאית יוצאים.
+ * lessonGenerator — פרק קוד אחד נכנס, שיעור יוצא: פסקת עיקרון ותרגיל.
  *
  * נקרא רק כשהמשתמש פותח פרק, ולא מראש — ראה ADR-005.
- * מבנה השאלה נגזר ישירות מסעיף 10 ב-PRD, שהוא קו ההגנה על סיכון מספר 2.
+ * מבנה השאלה האמריקאית נגזר מסעיף 10 ב-PRD. פורמט ההרכבה נקבע ב-ADR-010.
+ * הצורה נאכפת בסכמה דרך הספק — ראה SPIKE-004.
  */
 
-/** מספר האפשרויות בשאלה. קבוע, ולא נתון לשיקול דעת המודל. */
 export const OPTION_COUNT = 4
 
+/** גבולות תרגיל ההרכבה: מעט משבצות, שורה קצרה. בלי להעמיס — הנחיית המוצר. */
+export const MIN_TOKENS = 3
+export const MAX_TOKENS = 6
+export const MAX_ASSEMBLED_LENGTH = 90
+
+export type ExerciseKind = 'choice' | 'assemble'
+
+/**
+ * סוג התרגיל נקבע בקוד, לא על ידי המודל — צפוי ובדיק:
+ * פתיחה בהרכבה קלילה, עומק בשאלות חשיבה, ובאמצע לסירוגין.
+ */
+export function exerciseKindFor(difficulty: LessonDifficulty, chapterIndex: number): ExerciseKind {
+  if (difficulty === 'intro') return 'assemble'
+  if (difficulty === 'deep') return 'choice'
+  return chapterIndex % 2 === 0 ? 'choice' : 'assemble'
+}
+
+/** נגזר מחלק הפרקים שהושלמו. יחס ולא מספר קבוע — לפרויקטים יש 5 עד 12 פרקים. */
+export function difficultyForProgress(completed: number, total: number): LessonDifficulty {
+  if (total <= 0) return 'intro'
+  const ratio = completed / total
+  if (ratio < 0.25) return 'intro'
+  if (ratio < 0.65) return 'core'
+  return 'deep'
+}
+
 export const LESSON_SYSTEM_PROMPT = [
-  'You write one short lesson about one piece of code, for a computer science student.',
-  'The explanation is 2 to 4 sentences about what this code does and why it exists in the app.',
-  'The question is one multiple choice question about THIS code specifically,',
-  `with exactly ${OPTION_COUNT} options and one correct answer.`,
-  'The wrong options must be wrong but believable: a plausible misreading of this code.',
-  'Never write an option that is a joke, or obviously wrong to someone who did not read the code.',
-  'It must be impossible to answer correctly without reading the code.',
+  'You create one short interactive lesson about one piece of code the learner just built.',
+  'The "concept" field is a very short paragraph, 2 to 3 sentences, teaching the single most',
+  'important principle this code demonstrates. It must stand on its own before the exercise.',
+  'Everything must be about THIS code specifically, never general trivia.',
 ].join(' ')
 
 /**
- * הצורה נאכפת על ידי הספק, לא מבוקשת בנימוס בפרומפט.
- * אומת ב-SPIKE-004: שלוש מתוך שלוש תקינות עם הסכמה, אפס מתוך שלוש בלעדיה.
+ * הנחיות הקושי. הנחיית המוצר: ברמות הנמוכות כמעט בלי מונחים מקצועיים
+ * וכמה שפחות קוד. גם שאלה קלה אסור שתהיה ניתנת למענה בלי לקרוא את הקוד.
  */
-export const LESSON_SCHEMA: Record<string, unknown> = {
+const DIFFICULTY_PROMPTS: Record<LessonDifficulty, string> = {
+  intro: [
+    'The learner is a complete beginner with zero background: no technical jargon at all.',
+    'Use only words any person knows. If you must name a code thing, describe it in everyday words',
+    '(for example "the line that shows the number on the screen").',
+    'Teach one tiny fundamental principle. Quote at most one short line of code inside the concept.',
+  ].join(' '),
+  core: [
+    'The learner is a computer science student.',
+    'Focus on how this code works: the flow, the state it changes, or why it is written this way.',
+  ].join(' '),
+  deep: [
+    'The learner answered earlier chapters correctly and wants a challenge.',
+    'Focus on consequences: what would break or behave differently if part of this code changed,',
+    'or which edge case this code handles or misses.',
+  ].join(' '),
+}
+
+const KIND_PROMPTS: Record<ExerciseKind, string> = {
+  choice: [
+    `Then write one multiple choice question about this code, with exactly ${OPTION_COUNT} options and one correct answer.`,
+    'The wrong options must be wrong but believable: a plausible misreading of this code.',
+    'Never write an option that is a joke, or obviously wrong to someone who did not read the code.',
+    'It must be impossible to answer correctly without reading the code.',
+  ].join(' '),
+  assemble: [
+    'Then pick ONE short, meaningful line from this code and split it into',
+    `${MIN_TOKENS} to ${MAX_TOKENS} ordered pieces ("tokens") that concatenate back into that line.`,
+    'Split at natural points. Each token is a few characters, not a whole statement.',
+    'The "instruction" says in plain words what the assembled line does, without revealing the order.',
+    'The learner will tap the shuffled tokens in order to rebuild the line.',
+  ].join(' '),
+}
+
+export const CHOICE_SCHEMA: Record<string, unknown> = {
   type: 'object',
   properties: {
-    explanation: { type: 'string' },
+    concept: { type: 'string' },
     question: { type: 'string' },
     options: { type: 'array', items: { type: 'string' }, minItems: OPTION_COUNT, maxItems: OPTION_COUNT },
     correctIndex: { type: 'integer', minimum: 0, maximum: OPTION_COUNT - 1 },
   },
-  required: ['explanation', 'question', 'options', 'correctIndex'],
+  required: ['concept', 'question', 'options', 'correctIndex'],
+}
+
+export const ASSEMBLE_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    concept: { type: 'string' },
+    instruction: { type: 'string' },
+    tokens: { type: 'array', items: { type: 'string' }, minItems: MIN_TOKENS, maxItems: MAX_TOKENS },
+  },
+  required: ['concept', 'instruction', 'tokens'],
 }
 
 /** נזרקת כשהמודל החזיר שיעור שאינו עומד במבנה המחייב. */
@@ -45,54 +117,11 @@ export class LessonError extends Error {
 }
 
 export interface LessonRequest {
-  /** כותרת הפרק, כדי שהמודל יידע על מה מדובר. */
   title: string
   code: string
-  /** שפת ההסבר והשאלה. */
-  language: LessonLanguage
-  /** רמת הקושי. נגזרת מההתקדמות של המשתמש, ראה ADR-009. */
+  language: 'he' | 'en'
   difficulty: LessonDifficulty
-}
-
-export type LessonLanguage = 'he' | 'en'
-
-/**
- * שלוש מדרגות קושי. ההנחיה של יאיר: מתחילים קליל ברמת מי שלא יודע קוד,
- * והרמה עולה ככל שנצברים שלבים ונקודות.
- */
-export type LessonDifficulty = 'intro' | 'core' | 'deep'
-
-/**
- * גוזר את המדרגה מחלק הפרקים שכבר הושלמו בפרויקט.
- * יחס ולא מספר קבוע, כי לפרויקטים יש מספר פרקים שונה (5 עד 12).
- */
-export function difficultyForProgress(completed: number, total: number): LessonDifficulty {
-  if (total <= 0) return 'intro'
-  const ratio = completed / total
-  if (ratio < 0.25) return 'intro'
-  if (ratio < 0.65) return 'core'
-  return 'deep'
-}
-
-/**
- * הנחיות הקושי. כולן חייבות לכבד את סעיף 10 ב-PRD: גם שאלה קלה
- * אסור שתהיה ניתנת למענה בלי לקרוא את הקוד. "קלה" = שפה ומושג, לא כלליות.
- */
-const DIFFICULTY_PROMPTS: Record<LessonDifficulty, string> = {
-  intro: [
-    'The learner is a complete beginner who has never written code.',
-    'Use everyday language. If a technical term is unavoidable, explain it in a few simple words.',
-    'Ask about what this code visibly does in the app — something the learner can find by reading it slowly.',
-  ].join(' '),
-  core: [
-    'The learner is a computer science student.',
-    'Ask about how this code works: the flow, the state it changes, or why it is written this way.',
-  ].join(' '),
-  deep: [
-    'The learner answered earlier chapters correctly and wants a challenge.',
-    'Ask a harder question: what would break or behave differently if a specific part of this code changed,',
-    'or which edge case this code handles or misses.',
-  ].join(' '),
+  kind: ExerciseKind
 }
 
 export async function generateLesson(
@@ -102,44 +131,46 @@ export async function generateLesson(
   const { text } = await provider.complete({
     system: LESSON_SYSTEM_PROMPT,
     prompt: buildPrompt(request),
-    schema: LESSON_SCHEMA,
+    schema: request.kind === 'choice' ? CHOICE_SCHEMA : ASSEMBLE_SCHEMA,
   })
 
-  return parseLesson(text)
+  return parseLesson(request.kind, request.difficulty, text)
 }
 
-export function buildPrompt({ title, code, language, difficulty }: LessonRequest): string {
+export function buildPrompt({ title, code, language, difficulty, kind }: LessonRequest): string {
   const inLanguage =
     language === 'he'
-      ? 'Write the explanation, the question and all options in Hebrew. Keep code identifiers in English.'
-      : 'Write the explanation, the question and all options in English.'
+      ? 'Write everything in Hebrew. Keep code identifiers and code tokens in English.'
+      : 'Write everything in English.'
 
   return [
     `This piece of code is titled: ${title}`,
     DIFFICULTY_PROMPTS[difficulty],
+    KIND_PROMPTS[kind],
     inLanguage,
     'The code:',
     code,
   ].join('\n\n')
 }
 
-/**
- * הפלט מגיע ממודל, ולכן הוא נבדק ולא מונח.
- * כל כישלון כאן עדיף על שאלה שבורה שמוצגת למשתמש.
- */
-export function parseLesson(text: string): Lesson {
+/** הפלט מגיע ממודל, ולכן הוא נבדק ולא מונח. כישלון כאן עדיף על תרגיל שבור במסך. */
+export function parseLesson(kind: ExerciseKind, difficulty: LessonDifficulty, text: string): Lesson {
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
   } catch {
     throw new LessonError('המודל לא החזיר JSON תקין')
   }
-
   if (!isRecord(parsed)) throw new LessonError('המודל לא החזיר אובייקט')
 
-  const explanation = asText(parsed.explanation)
-  if (!explanation) throw new LessonError('חסר הסבר')
+  const concept = asText(parsed.concept)
+  if (!concept) throw new LessonError('חסרה פסקת העיקרון')
 
+  const exercise = kind === 'choice' ? parseChoice(parsed) : parseAssemble(parsed)
+  return { difficulty, concept, exercise }
+}
+
+function parseChoice(parsed: Record<string, unknown>): ChoiceExercise {
   const question = asText(parsed.question)
   if (!question) throw new LessonError('חסרה שאלה')
 
@@ -148,9 +179,7 @@ export function parseLesson(text: string): Lesson {
   if (options.length !== OPTION_COUNT || options.some((option) => !option)) {
     throw new LessonError(`נדרשות בדיוק ${OPTION_COUNT} אפשרויות, וכולן לא ריקות`)
   }
-  if (new Set(options).size !== options.length) {
-    throw new LessonError('שתי אפשרויות זהות')
-  }
+  if (new Set(options).size !== options.length) throw new LessonError('שתי אפשרויות זהות')
 
   const correctIndex = parsed.correctIndex
   if (typeof correctIndex !== 'number' || !Number.isInteger(correctIndex)) {
@@ -160,10 +189,28 @@ export function parseLesson(text: string): Lesson {
     throw new LessonError('מספר האפשרות הנכונה מחוץ לתחום')
   }
 
-  return {
-    explanation,
-    question: { text: question, options: options as string[], correctIndex },
+  return { kind: 'choice', question, options, correctIndex }
+}
+
+function parseAssemble(parsed: Record<string, unknown>): AssembleExercise {
+  const instruction = asText(parsed.instruction)
+  if (!instruction) throw new LessonError('חסרה הוראת ההרכבה')
+
+  if (!Array.isArray(parsed.tokens)) throw new LessonError('חסרות משבצות')
+  const tokens = parsed.tokens.map((token) => (typeof token === 'string' ? token : ''))
+  const trimmed = tokens.map((token) => token.trim())
+  if (
+    trimmed.length < MIN_TOKENS ||
+    trimmed.length > MAX_TOKENS ||
+    trimmed.some((token) => !token)
+  ) {
+    throw new LessonError(`נדרשות ${MIN_TOKENS} עד ${MAX_TOKENS} משבצות, וכולן לא ריקות`)
   }
+  if (trimmed.join(' ').length > MAX_ASSEMBLED_LENGTH) {
+    throw new LessonError('השורה המורכבת ארוכה מדי — התרגיל אמור להיות קליל')
+  }
+
+  return { kind: 'assemble', instruction, tokens: trimmed }
 }
 
 function asText(value: unknown): string {
