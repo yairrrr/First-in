@@ -1,32 +1,35 @@
-# תלויות
+# Dependencies
 node_modules/
 
-# תוצרי בנייה
+# Build output
 dist/
 dist-ssr/
 build/
 
-# משתני סביבה - לעולם לא נכנסים ל-git
+# Environment variables — never committed
 .env
 .env.local
 .env.*.local
 
-# לוגים
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# עורכים
+# Editors
 .vscode/*
 !.vscode/extensions.json
 .idea/
 *.swp
 
-# מערכת הפעלה
+# OS
 .DS_Store
 Thumbs.db
 
-# תוצרי בדיקות
+# Test output
 coverage/
+
+# Internal planning docs — kept local only
+docs/

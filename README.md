@@ -1,48 +1,39 @@
 # First-In
 
-סביבת פיתוח מבוססת AI שבה המשתמש מתאר אפליקציה או משחק, המערכת בונה אותו,
-ולאחר מכן המשתמש לומד בשלבים את הקוד שנוצר עבורו וצובר נקודות עד שהוא מבין
-את הפרויקט שיצר.
+An AI-powered build-and-learn environment. Describe an app or a game in a prompt,
+watch it get built and run in your browser — then learn the generated code step
+by step, earning points until you truly understand the project you created.
 
-**עקרון הליבה:** Creation First. Understanding Along the Way.
+**Core principle:** Creation First. Understanding Along the Way.
 
-## סטטוס
+## What it does
 
-כל רכיבי ה-MVP שבסעיף 7 ב-PRD קיימים ועובדים: יצירה מפרומפט, הצגת הפרויקט
-רץ, מפת פרקים עם התקדמות ונקודות, ושיעור עם שאלה אמריקאית בכל פרק.
+- Turns a free-text prompt into a working, self-contained HTML app, rendered live in the page
+- Splits the generated code into learning chapters — deterministically, no AI involved
+- Each chapter is a two-phase micro-lesson: a short concept card, then an interactive exercise
+- Two exercise types: tap-to-assemble a real line from your code, or a multiple-choice question
+- Difficulty adapts to progress — early chapters use plain language and minimal code
+- Points, progress map and a first-try accuracy metric, all persisted locally
+- Download any built project as a standalone HTML file
 
-מה שנשאר להגשה: הדרישות התהליכיות של המחוון — יומן prompts וסרטון.
+## Stack
 
-## הרצה
+React, TypeScript, Vite, React Router, plain CSS with Flexbox, Vitest.
+Local language model via Ollama (gemma4:12b) — no cloud services, no API keys, zero cost.
+
+## Running
 
 ```
 npm install
 npm run dev
 ```
 
-לבנייה אמיתית נדרש Ollama שרץ מקומית עם המודל gemma4:12b.
-בלעדיו אפשר לסמן "מצב הדגמה" ולקבל פרויקט שמור מראש.
+Building real projects requires [Ollama](https://ollama.com) running locally with
+the `gemma4:12b` model. Without it, check "demo mode" to explore a pre-built project.
 
-## בדיקות
+## Tests
 
 ```
-npm test        בדיקות יחידה, ללא רשת
-npm run test:e2e   בדיקת אינטגרציה מול Ollama אמיתי, כשתי דקות
+npm test          # unit tests, no network
+npm run test:e2e  # integration test against a live Ollama (~1 min)
 ```
-
-## תיעוד
-
-- [PRD](docs/PRD.md) — הגדרת המוצר, היקף ה-MVP, מדידה וסיכונים
-- [ARCHITECTURE](docs/ARCHITECTURE.md) — מבנה השכבות וזרימת הנתונים
-- [DECISIONS](docs/DECISIONS.md) — יומן החלטות ארכיטקטורה ותוצאות spikes
-
-## Stack
-
-React, TypeScript, Vite, React Router, CSS עם Flexbox, Vitest.
-מודל שפה מקומי דרך Ollama — ‏gemma4:12b — ללא עלות וללא שירותי ענן.
-
-## מה המוצר עושה
-
-המשתמש מתאר אפליקציה, המודל בונה אותה כקובץ HTML עצמאי, והיא רצה בתוך הדף.
-הקוד מתפצל לפרקי למידה: הסבר קצר ושאלה אמריקאית על כל חלק, נקודות והתקדמות.
-רמת השאלות עולה עם ההתקדמות. אפשר להוריד את הפרויקט שנבנה כקובץ HTML.
