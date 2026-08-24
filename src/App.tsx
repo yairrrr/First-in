@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { StageBanner } from './components/StageBanner'
 import { useApp } from './state/AppContext'
@@ -12,6 +12,20 @@ const LANGUAGE_LABELS: Record<Language, string> = { he: 'עברית', en: 'Engli
 export function App() {
   const { state, dispatch } = useApp()
   const { t, language } = useT()
+  const headerRef = useRef<HTMLElement>(null)
+
+  // גובה הכותרת נמדד ומפורסם כמשתנה CSS, כדי שמסך הפרויקט יוכל למלא
+  // בדיוק את מה שנשאר מגובה החלון — בכל רוחב מסך ובכל שפה.
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+    const publish = () =>
+      document.documentElement.style.setProperty('--header-h', `${header.offsetHeight}px`)
+    publish()
+    const observer = new ResizeObserver(publish)
+    observer.observe(header)
+    return () => observer.disconnect()
+  }, [])
 
   // כיוון הדף ושפתו נקבעים במסמך עצמו, לא ברכיב — כך גם הגלילה והפיסוק מתיישרים.
   useEffect(() => {
@@ -27,7 +41,7 @@ export function App() {
         <div className="blob blob-cyan" />
       </div>
 
-      <header className="header">
+      <header className="header" ref={headerRef}>
         {/* שלושה אזורים שווי רוחב, כדי שהשם יישב במרכז אמיתי של המסך */}
         <div className="header-side">
           <Link to="/" className="logo-link">

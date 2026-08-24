@@ -26,9 +26,45 @@ export function ProjectPage() {
     )
   }
 
+  // פרויקט מוכן מקבל את כל המסך: שורת כלים דקה, ומתחתיה התוצר ממלא את השאר.
+  if (project.status === 'ready') {
+    return (
+      <section className="stage">
+        <div className="stage-bar">
+          {/* הפרומפט הוא טקסט של המשתמש, ויכול להיות בכל שפה. dir="auto" מונע פיסוק שקופץ. */}
+          <h2 className="stage-title" dir="auto">
+            {project.prompt}
+          </h2>
+          <div className="stage-tools">
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => void previewRef.current?.requestFullscreen?.()}
+            >
+              {t('project.fullscreen')}
+            </button>
+            <button type="button" className="ghost" onClick={() => downloadProject(project)}>
+              {t('project.download')}
+            </button>
+            <Link to={`/project/${project.id}/study`} className="stage-cta">
+              {t('project.study')} · {t('project.chaptersWaiting', { count: project.chapters.length })}
+            </Link>
+          </div>
+        </div>
+        <iframe
+          ref={previewRef}
+          className="preview"
+          title={project.prompt}
+          srcDoc={project.code}
+          // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
+          sandbox="allow-scripts"
+        />
+      </section>
+    )
+  }
+
   return (
     <section className="panel panel-wide">
-      {/* הפרומפט הוא טקסט של המשתמש, ויכול להיות בכל שפה. dir="auto" מונע פיסוק שקופץ. */}
       <h2 dir="auto">{project.prompt}</h2>
 
       {project.status === 'building' && (
@@ -52,39 +88,6 @@ export function ProjectPage() {
         </div>
       )}
 
-      {project.status === 'ready' && (
-        <>
-          <div className="preview-frame">
-            <iframe
-              ref={previewRef}
-              className="preview"
-              title={project.prompt}
-              srcDoc={project.code}
-              // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
-              sandbox="allow-scripts"
-            />
-            <div className="preview-tools">
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => void previewRef.current?.requestFullscreen?.()}
-              >
-                {t('project.fullscreen')}
-              </button>
-              <button type="button" className="ghost" onClick={() => downloadProject(project)}>
-                {t('project.download')}
-              </button>
-            </div>
-          </div>
-
-          <Link to={`/project/${project.id}/study`} className="study-cta">
-            <span>{t('project.study')}</span>
-            <span className="meta">
-              {t('project.chaptersWaiting', { count: project.chapters.length })}
-            </span>
-          </Link>
-        </>
-      )}
     </section>
   )
 }
