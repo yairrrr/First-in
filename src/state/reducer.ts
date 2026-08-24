@@ -1,9 +1,10 @@
 import type { Action, AppState, Project } from './types'
+import { xpForAnswer } from './rank'
 
 /** נקודות על פרק שנענה נכון בניסיון הראשון. */
 export const POINTS_PER_CHAPTER = 10
 
-export const initialState: AppState = { projects: [] }
+export const initialState: AppState = { projects: [], xp: 0 }
 
 /**
  * הפונקציה היחידה שמשנה מצב באפליקציה.
@@ -52,8 +53,8 @@ export function reducer(state: AppState, action: Action): AppState {
         ),
       }))
 
-    case 'CHAPTER_ANSWERED':
-      return updateProject(state, action.projectId, (project) => {
+    case 'CHAPTER_ANSWERED': {
+      const withProject = updateProject(state, action.projectId, (project) => {
         const chapter = project.chapters.find((c) => c.id === action.chapterId)
         if (!chapter) return project
 
@@ -73,6 +74,17 @@ export function reducer(state: AppState, action: Action): AppState {
 
         return { ...project, points: project.points + earned, chapters }
       })
+
+      // תשובה נכונה שסגרה פרק מזכה גם ב-XP גלובלי, לפי רמת השאלה שנענתה.
+      // ה-XP הוא מה שמעלה את דרגת המשתמש, חוצה פרויקטים — ראה rank.ts.
+      if (!action.correct || withProject === state) return withProject
+      const answered = withProject.projects
+        .find((p) => p.id === action.projectId)
+        ?.chapters.find((c) => c.id === action.chapterId)
+      if (!answered?.completed) return withProject
+      const difficulty = answered.lesson?.difficulty ?? 'intro'
+      return { ...withProject, xp: state.xp + xpForAnswer(difficulty, answered.attempts) }
+    }
   }
 }
 

@@ -33,20 +33,20 @@ export function exerciseKindFor(difficulty: LessonDifficulty, chapterIndex: numb
   return chapterIndex % 2 === 0 ? 'choice' : 'assemble'
 }
 
-/** נגזר מחלק הפרקים שהושלמו. יחס ולא מספר קבוע — לפרויקטים יש 5 עד 12 פרקים. */
-export function difficultyForProgress(completed: number, total: number): LessonDifficulty {
-  if (total <= 0) return 'intro'
-  const ratio = completed / total
-  if (ratio < 0.25) return 'intro'
-  if (ratio < 0.65) return 'core'
-  return 'deep'
-}
+/** גבולות קריאות. שאלה ארוכה מזה היא שאלה מסובכת, ולכן נדחית. */
+export const MAX_QUESTION_CHARS = 120
+export const MAX_OPTION_CHARS = 70
+export const MAX_CONCEPT_CHARS = 320
 
 export const LESSON_SYSTEM_PROMPT = [
   'You create one short interactive lesson about one piece of code the learner just built.',
   'The "concept" field is a very short paragraph, 2 to 3 sentences, teaching the single most',
   'important principle this code demonstrates. It must stand on its own before the exercise.',
   'Everything must be about THIS code specifically, never general trivia.',
+  'Readability rules, always: short sentences, one idea per sentence, concrete everyday words.',
+  'A question is at most 15 words and describes ONE simple situation.',
+  'Never chain conditions ("if X while Y when Z"). Never stack two questions into one.',
+  'Each answer option is a short phrase, at most 8 words, all options in the same shape.',
 ].join(' ')
 
 /**
@@ -61,13 +61,14 @@ const DIFFICULTY_PROMPTS: Record<LessonDifficulty, string> = {
     'Teach one tiny fundamental principle. Quote at most one short line of code inside the concept.',
   ].join(' '),
   core: [
-    'The learner is a computer science student.',
-    'Focus on how this code works: the flow, the state it changes, or why it is written this way.',
+    'The learner knows basic programming but is not an expert.',
+    'Focus on what this code does and why, in plain words. You may name one identifier from the code.',
+    'Do not mention data structures, patterns, or theory by name.',
   ].join(' '),
   deep: [
-    'The learner answered earlier chapters correctly and wants a challenge.',
-    'Focus on consequences: what would break or behave differently if part of this code changed,',
-    'or which edge case this code handles or misses.',
+    'The learner is experienced and wants a real challenge — but a readable one.',
+    'Ask about one concrete consequence: what changes if one specific line is removed or altered.',
+    'State the situation in plain words first, then the question. Still at most 15 words.',
   ].join(' '),
 }
 
@@ -165,6 +166,7 @@ export function parseLesson(kind: ExerciseKind, difficulty: LessonDifficulty, te
 
   const concept = asText(parsed.concept)
   if (!concept) throw new LessonError('חסרה פסקת העיקרון')
+  if (concept.length > MAX_CONCEPT_CHARS) throw new LessonError('פסקת העיקרון ארוכה מדי')
 
   const exercise = kind === 'choice' ? parseChoice(parsed) : parseAssemble(parsed)
   return { difficulty, concept, exercise }
@@ -173,6 +175,7 @@ export function parseLesson(kind: ExerciseKind, difficulty: LessonDifficulty, te
 function parseChoice(parsed: Record<string, unknown>): ChoiceExercise {
   const question = asText(parsed.question)
   if (!question) throw new LessonError('חסרה שאלה')
+  if (question.length > MAX_QUESTION_CHARS) throw new LessonError('השאלה ארוכה ומסובכת מדי')
 
   if (!Array.isArray(parsed.options)) throw new LessonError('חסרות אפשרויות')
   const options = parsed.options.map(asText)
@@ -180,6 +183,9 @@ function parseChoice(parsed: Record<string, unknown>): ChoiceExercise {
     throw new LessonError(`נדרשות בדיוק ${OPTION_COUNT} אפשרויות, וכולן לא ריקות`)
   }
   if (new Set(options).size !== options.length) throw new LessonError('שתי אפשרויות זהות')
+  if (options.some((option) => option.length > MAX_OPTION_CHARS)) {
+    throw new LessonError('אפשרות ארוכה מדי — התשובות אמורות להיות קצרות')
+  }
 
   const correctIndex = parsed.correctIndex
   if (typeof correctIndex !== 'number' || !Number.isInteger(correctIndex)) {

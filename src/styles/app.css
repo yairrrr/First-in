@@ -188,26 +188,46 @@ body {
   box-shadow: 0 0 22px rgba(122, 108, 250, 0.18);
 }
 
-.stage-dots {
+.rank-level {
   display: flex;
-  gap: 5px;
-}
-
-.stage-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.stage-dot.lit {
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   background: var(--brand-gradient);
-  box-shadow: 0 0 8px var(--glow);
+  border-radius: 50%;
+  color: #08080e;
+  font-family: var(--font-brand);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.rank-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 118px;
+}
+
+.rank-bar {
+  display: flex;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rank-fill {
+  background: var(--brand-gradient);
+  border-radius: 2px;
+  transition: width 0.5s var(--ease);
 }
 
 .stage-text {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
 }
 

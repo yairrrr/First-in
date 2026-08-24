@@ -224,3 +224,51 @@ describe('בנייה חוזרת', () => {
     expect(retried.projects[0].prompt).toBe('משחק זיכרון')
   })
 })
+
+describe('XP גלובלי', () => {
+  const lesson = {
+    difficulty: 'core' as const,
+    concept: 'עיקרון',
+    exercise: { kind: 'choice' as const, question: 'ש?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 0 },
+  }
+
+  function readyWithLesson() {
+    const ready = buildReadyProject()
+    return reducer(ready, { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
+  }
+
+  it('תשובה נכונה מהניסיון הראשון מוסיפה XP לפי רמת השאלה ועם בונוס', () => {
+    const next = reducer(readyWithLesson(), {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
+    })
+    expect(next.xp).toBe(25) // core 20 + בונוס 5
+  })
+
+  it('תשובה שגויה לא מוסיפה XP, ותשובה נכונה אחריה מוסיפה בלי בונוס', () => {
+    const wrong = reducer(readyWithLesson(), {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: false,
+    })
+    expect(wrong.xp).toBe(0)
+    const right = reducer(wrong, {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
+    })
+    expect(right.xp).toBe(20)
+  })
+
+  it('ביקור חוזר בפרק שהושלם לא מוסיף XP שוב', () => {
+    const once = reducer(readyWithLesson(), {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
+    })
+    const twice = reducer(once, {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
+    })
+    expect(twice.xp).toBe(once.xp)
+  })
+
+  it('פרק בלי שיעור שמור נספר כרמת פתיחה', () => {
+    const next = reducer(buildReadyProject(), {
+      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
+    })
+    expect(next.xp).toBe(15)
+  })
+})

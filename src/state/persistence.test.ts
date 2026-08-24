@@ -31,7 +31,7 @@ const readyProject = {
 describe('saveState ו-loadState', () => {
   it('מחזירים את אותו מצב הלוך ושוב', () => {
     const storage = fakeStorage()
-    const state: AppState = { projects: [readyProject] } as AppState
+    const state: AppState = { projects: [readyProject], xp: 0 } as AppState
 
     saveState(storage, state)
     expect(loadState(storage)).toEqual(state)
@@ -40,19 +40,19 @@ describe('saveState ו-loadState', () => {
   it('שומרים תחת מפתח שנושא מספר גרסה', () => {
     const storage = fakeStorage()
     let key = ''
-    saveState({ getItem: () => null, setItem: (k) => (key = k) }, { projects: [] })
+    saveState({ getItem: () => null, setItem: (k) => (key = k) }, { projects: [], xp: 0 })
     expect(key).toBe(STORAGE_KEY)
     expect(storage.value).toBeNull()
   })
 
   it('מצב ריק כשאין מה לטעון', () => {
-    expect(loadState(fakeStorage())).toEqual({ projects: [] })
-    expect(loadState(undefined)).toEqual({ projects: [] })
+    expect(loadState(fakeStorage())).toEqual({ projects: [], xp: 0 })
+    expect(loadState(undefined)).toEqual({ projects: [], xp: 0 })
   })
 
   it('שורדים מידע פגום ולא מפילים את האפליקציה', () => {
-    expect(loadState(fakeStorage('לא JSON'))).toEqual({ projects: [] })
-    expect(loadState(fakeStorage('{"projects": "not an array"}'))).toEqual({ projects: [] })
+    expect(loadState(fakeStorage('לא JSON'))).toEqual({ projects: [], xp: 0 })
+    expect(loadState(fakeStorage('{"projects": "not an array"}'))).toEqual({ projects: [], xp: 0 })
   })
 
   it('זורקים פרויקט פגום ושומרים את התקינים', () => {
@@ -78,8 +78,8 @@ describe('saveState ו-loadState', () => {
         throw new Error('blocked')
       },
     }
-    expect(loadState(blocked)).toEqual({ projects: [] })
-    expect(() => saveState(blocked, { projects: [] })).not.toThrow()
+    expect(loadState(blocked)).toEqual({ projects: [], xp: 0 })
+    expect(() => saveState(blocked, { projects: [], xp: 0 })).not.toThrow()
   })
 })
 
@@ -136,5 +136,19 @@ describe('טעינת שיעורים שמורים', () => {
     }
     const chapter = loadState(storedWith({ lesson: v1 })).projects[0].chapters[0]
     expect(chapter.lesson).toBeNull()
+  })
+})
+
+describe('XP גלובלי', () => {
+  it('נשמר ונטען', () => {
+    const storage = fakeStorage()
+    saveState(storage, { projects: [], xp: 135 })
+    expect(loadState(storage).xp).toBe(135)
+  })
+
+  it('מצב ישן בלי XP, או XP פגום, נטען עם אפס', () => {
+    expect(loadState(fakeStorage('{"projects": []}')).xp).toBe(0)
+    expect(loadState(fakeStorage('{"projects": [], "xp": "הרבה"}')).xp).toBe(0)
+    expect(loadState(fakeStorage('{"projects": [], "xp": -5}')).xp).toBe(0)
   })
 })

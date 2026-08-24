@@ -15,7 +15,7 @@ export interface StateStorage {
   setItem(key: string, value: string): void
 }
 
-const EMPTY: AppState = { projects: [] }
+const EMPTY: AppState = { projects: [], xp: 0 }
 
 export function loadState(storage: StateStorage | undefined): AppState {
   if (!storage) return EMPTY
@@ -31,7 +31,7 @@ export function loadState(storage: StateStorage | undefined): AppState {
 
   try {
     const parsed: unknown = JSON.parse(raw)
-    return { projects: toProjects(parsed) }
+    return { projects: toProjects(parsed), xp: toXp(parsed) }
   } catch {
     return EMPTY
   }
@@ -44,6 +44,13 @@ export function saveState(storage: StateStorage | undefined, state: AppState): v
   } catch {
     // מכסת האחסון מלאה. הפרויקט ימשיך לעבוד, פשוט לא ישרוד רענון.
   }
+}
+
+/** מצב שנשמר לפני שהיה XP נטען עם אפס — לא מפיל ולא ממציא. */
+function toXp(parsed: unknown): number {
+  if (!isRecord(parsed)) return 0
+  const xp = parsed.xp
+  return typeof xp === 'number' && Number.isFinite(xp) && xp >= 0 ? Math.floor(xp) : 0
 }
 
 /**

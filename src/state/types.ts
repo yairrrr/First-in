@@ -70,6 +70,8 @@ export interface Project {
 
 export interface AppState {
   projects: Project[]
+  /** ניסיון מצטבר של המשתמש, חוצה פרויקטים. קובע את הדרגה — ראה rank.ts. */
+  xp: number
 }
 
 export type Action =

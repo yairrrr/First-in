@@ -5,7 +5,6 @@ import {
   LESSON_SYSTEM_PROMPT,
   LessonError,
   buildPrompt,
-  difficultyForProgress,
   exerciseKindFor,
   generateLesson,
   parseLesson,
@@ -95,14 +94,20 @@ describe('exerciseKindFor', () => {
   })
 })
 
-describe('difficultyForProgress', () => {
-  it('מתחיל קליל, מטפס באמצע, ומעמיק בסוף', () => {
-    expect(difficultyForProgress(0, 7)).toBe('intro')
-    expect(difficultyForProgress(1, 7)).toBe('intro')
-    expect(difficultyForProgress(2, 7)).toBe('core')
-    expect(difficultyForProgress(4, 7)).toBe('core')
-    expect(difficultyForProgress(5, 7)).toBe('deep')
-    expect(difficultyForProgress(0, 0)).toBe('intro')
+describe('קריאות', () => {
+  it('דוחה שאלה ארוכה ומסובכת', () => {
+    const long = { ...validChoice, question: 'מה '.repeat(60) }
+    expect(() => parseLesson('choice', 'core', JSON.stringify(long))).toThrow(/מסובכת/)
+  })
+
+  it('דוחה אפשרות ארוכה', () => {
+    const long = { ...validChoice, options: ['x'.repeat(80), 'ב', 'ג', 'ד'] }
+    expect(() => parseLesson('choice', 'core', JSON.stringify(long))).toThrow(/קצרות/)
+  })
+
+  it('כללי הקריאות נמצאים בהנחיית המערכת', () => {
+    expect(LESSON_SYSTEM_PROMPT).toContain('at most 15 words')
+    expect(LESSON_SYSTEM_PROMPT).toContain('Never chain conditions')
   })
 })
 
@@ -153,7 +158,7 @@ describe('generateLesson ו-buildPrompt', () => {
 
   it('כל מדרגה מזריקה הנחיה משלה', () => {
     const base = { title: 'פרק', code: 'x', language: 'he', kind: 'choice' } as const
-    expect(buildPrompt({ ...base, difficulty: 'core' })).toContain('computer science student')
-    expect(buildPrompt({ ...base, difficulty: 'deep' })).toContain('what would break')
+    expect(buildPrompt({ ...base, difficulty: 'core' })).toContain('not an expert')
+    expect(buildPrompt({ ...base, difficulty: 'deep' })).toContain('one concrete consequence')
   })
 })

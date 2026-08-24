@@ -3,7 +3,8 @@ import { useApp } from './AppContext'
 import { createProvider, type ProviderKind } from '../llm/createProvider'
 import { buildProject } from '../services/projectBuilder'
 import { splitCode } from '../services/codeSplitter'
-import { difficultyForProgress, exerciseKindFor, generateLesson } from '../services/lessonGenerator'
+import { exerciseKindFor, generateLesson } from '../services/lessonGenerator'
+import { rankForXp } from './rank'
 import type { Action, Chapter, Project } from './types'
 
 /**
@@ -36,7 +37,8 @@ export function nextChapterToPrefetch(project: Project, afterChapterId?: string)
 }
 
 export function useProjectActions() {
-  const { dispatch } = useApp()
+  const { state, dispatch } = useApp()
+  const xp = state.xp
 
   /** פותח פרויקט מיד, ומריץ את הבנייה ברקע. מחזיר את המזהה כדי שאפשר יהיה לנווט אליו. */
   const startProject = useCallback(
@@ -75,10 +77,9 @@ export function useProjectActions() {
       inFlightLessons.add(key)
 
       try {
-        // הקושי נקבע ברגע יצירת השיעור, לפי כמה כבר הושלם. שיעור שנשמר
-        // שומר את הרמה שבה נוצר — זו ההתקדמות כפי שהייתה כשהמשתמש הגיע אליו.
-        const completed = project.chapters.filter((c) => c.completed).length
-        const difficulty = difficultyForProgress(completed, project.chapters.length)
+        // הקושי נקבע ברגע יצירת השיעור, לפי דרגת המשתמש באותו רגע.
+        // שיעור שנשמר שומר את הרמה שבה נוצר.
+        const difficulty = rankForXp(xp).difficulty
         const chapterIndex = project.chapters.findIndex((c) => c.id === chapter.id)
         const lesson = await generateLesson(createProvider(project.provider), {
           title: chapter.title,
@@ -95,7 +96,7 @@ export function useProjectActions() {
         inFlightLessons.delete(key)
       }
     },
-    [dispatch],
+    [dispatch, xp],
   )
 
   const answerQuestion = useCallback(
