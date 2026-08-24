@@ -4,6 +4,7 @@ import { useApp } from '../state/AppContext'
 import { useProjectActions } from '../state/useProjectActions'
 import { useT } from '../i18n/useT'
 import { Icon } from '../components/Icon'
+import { RevisionPanel } from '../components/RevisionPanel'
 import { useToast } from '../components/Toast'
 import type { Project } from '../state/types'
 
@@ -18,6 +19,7 @@ export function ProjectPage() {
   const { t } = useT()
   const { showToast } = useToast()
   const previewRef = useRef<HTMLIFrameElement>(null)
+  const [panelOpen, setPanelOpen] = useState(false)
   const project = state.projects.find((candidate) => candidate.id === id)
 
   if (!project) {
@@ -39,6 +41,15 @@ export function ProjectPage() {
             {project.prompt}
           </h2>
           <div className="stage-tools">
+            <button
+              type="button"
+              className={`ghost ${panelOpen ? 'ghost-active' : ''}`}
+              aria-pressed={panelOpen}
+              onClick={() => setPanelOpen((open) => !open)}
+            >
+              <Icon name="sparkles" size={15} />
+              {t('revise.open')}
+            </button>
             <button
               type="button"
               className="ghost"
@@ -64,14 +75,17 @@ export function ProjectPage() {
             </Link>
           </div>
         </div>
-        <iframe
-          ref={previewRef}
-          className="preview"
-          title={project.prompt}
-          srcDoc={project.code}
-          // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
-          sandbox="allow-scripts"
-        />
+        <div className="stage-body">
+          {panelOpen && <RevisionPanel project={project} />}
+          <iframe
+            ref={previewRef}
+            className="preview"
+            title={project.prompt}
+            srcDoc={project.code}
+            // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
+            sandbox="allow-scripts"
+          />
+        </div>
       </section>
     )
   }

@@ -9,7 +9,7 @@ function chapter(id: string, over: Partial<Chapter> = {}): Chapter {
 function project(chapters: Chapter[]): Project {
   return {
     id: 'p1', prompt: 'x', provider: 'fixture', status: 'ready',
-    code: '<html></html>', chapters, points: 0, error: null, createdAt: '',
+    code: '<html></html>', chapters, revisions: [], previousVersions: [], points: 0, error: null, createdAt: '',
   }
 }
 

@@ -7,6 +7,8 @@ import type {
   Lesson,
   Project,
   ProjectStatus,
+  ProjectVersion,
+  Revision,
 } from './types'
 import { MAX_TOKENS, MIN_TOKENS, OPTION_COUNT } from '../services/lessonGenerator'
 
@@ -95,10 +97,41 @@ function toProject(candidate: unknown): Project | null {
     status: toStatus(candidate.status),
     code: typeof candidate.code === 'string' ? candidate.code : '',
     chapters: Array.isArray(candidate.chapters) ? candidate.chapters.flatMap(toChapter) : [],
+    revisions: Array.isArray(candidate.revisions) ? candidate.revisions.flatMap(toRevision) : [],
+    previousVersions: Array.isArray(candidate.previousVersions)
+      ? candidate.previousVersions.flatMap(toVersion)
+      : [],
     points: typeof candidate.points === 'number' ? candidate.points : 0,
     error: candidate.status === 'building' ? 'הבנייה נקטעה כשהדף נטען מחדש.' : toError(candidate.error),
     createdAt: typeof candidate.createdAt === 'string' ? candidate.createdAt : '',
   }
+}
+
+function toVersion(candidate: unknown): ProjectVersion[] {
+  if (!isRecord(candidate) || typeof candidate.code !== 'string') return []
+  const chapters = Array.isArray(candidate.chapters) ? candidate.chapters.flatMap(toChapter) : []
+  return [{ code: candidate.code, chapters }]
+}
+
+/** שינוי שנקטע ברענון לא יסתיים לעולם — נטען ככישלון, כמו בנייה. */
+function toRevision(candidate: unknown): Revision[] {
+  if (!isRecord(candidate)) return []
+  if (typeof candidate.id !== 'string' || typeof candidate.instruction !== 'string') return []
+  const status = candidate.status === 'applied' ? 'applied' : 'failed'
+  return [
+    {
+      id: candidate.id,
+      instruction: candidate.instruction,
+      status,
+      message:
+        candidate.status === 'working'
+          ? 'interrupted'
+          : typeof candidate.message === 'string'
+            ? candidate.message
+            : null,
+      createdAt: typeof candidate.createdAt === 'string' ? candidate.createdAt : '',
+    },
+  ]
 }
 
 function toStatus(value: unknown): ProjectStatus {

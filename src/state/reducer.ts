@@ -1,4 +1,4 @@
-import type { Action, AppState, Project } from './types'
+import { MAX_PREVIOUS_VERSIONS, type Action, type AppState, type Chapter, type Project } from './types'
 import { xpForAnswer } from './rank'
 
 /** נקודות על פרק שנענה נכון בניסיון הראשון. */
@@ -20,6 +20,50 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'PROJECT_DELETED':
       return { ...state, projects: state.projects.filter((p) => p.id !== action.projectId) }
+
+    case 'REVISION_STARTED':
+      return updateProject(state, action.projectId, (project) => ({
+        ...project,
+        revisions: [...project.revisions, action.revision],
+      }))
+
+    case 'REVISION_SUCCEEDED':
+      return updateProject(state, action.projectId, (project) => ({
+        ...project,
+        code: action.code,
+        // הקוד השתנה, אבל מה שכבר נלמד לא נמחק: פרקים שנשארו זהים שומרים התקדמות.
+        chapters: mergeChapters(project.chapters, action.chapters),
+        previousVersions: [
+          ...project.previousVersions,
+          { code: project.code, chapters: project.chapters },
+        ].slice(-MAX_PREVIOUS_VERSIONS),
+        revisions: project.revisions.map((r) =>
+          r.id === action.revisionId ? { ...r, status: 'applied' as const } : r,
+        ),
+      }))
+
+    case 'REVISION_FAILED':
+      return updateProject(state, action.projectId, (project) => ({
+        ...project,
+        revisions: project.revisions.map((r) =>
+          r.id === action.revisionId
+            ? { ...r, status: 'failed' as const, message: action.message }
+            : r,
+        ),
+      }))
+
+    case 'REVISION_REVERTED':
+      return updateProject(state, action.projectId, (project) => {
+        const previous = project.previousVersions[project.previousVersions.length - 1]
+        if (previous === undefined) return project
+        return {
+          ...project,
+          code: previous.code,
+          // הפרקים חוזרים כפי שהיו, אבל מה שהושלם בינתיים על פרק זהה לא נמחק.
+          chapters: restoreChapters(project.chapters, previous.chapters),
+          previousVersions: project.previousVersions.slice(0, -1),
+        }
+      })
 
     case 'BUILD_STARTED':
       // בנייה חוזרת אחרי כישלון: הפרויקט חוזר לנקודת ההתחלה, אותו פרומפט.
@@ -89,6 +133,45 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...withProject, xp: state.xp + xpForAnswer(difficulty, answered.attempts) }
     }
   }
+}
+
+/**
+ * הקוד השתנה והפרקים חולקו מחדש. פרק חדש שיש לו "תאום" בישן — אותה כותרת
+ * (אותה פונקציה, אותו בורר, אותו אזור) — יורש את ההתקדמות. השיעור נשמר רק
+ * אם הקוד של הפרק זהה; אם השתנה, ייווצר שיעור חדש על הקוד החדש.
+ */
+export function mergeChapters(previous: Chapter[], next: Chapter[]): Chapter[] {
+  const remaining = [...previous]
+  return next.map((chapter) => {
+    const index = remaining.findIndex((old) => sameTitle(old, chapter))
+    if (index === -1) return chapter
+    const [old] = remaining.splice(index, 1)
+    return {
+      ...chapter,
+      completed: old.completed,
+      attempts: old.attempts,
+      lesson: old.code === chapter.code ? old.lesson : null,
+    }
+  })
+}
+
+/**
+ * חזרה לגרסה קודמת: הפרקים של התמונה חוזרים במלואם, כולל שיעורים.
+ * פרק שהושלם אחרי השינוי ויש לו תאום בתמונה — ההשלמה נשמרת גם אחרי החזרה.
+ */
+export function restoreChapters(current: Chapter[], snapshot: Chapter[]): Chapter[] {
+  const remaining = [...current]
+  return snapshot.map((chapter) => {
+    const index = remaining.findIndex((c) => sameTitle(c, chapter))
+    if (index === -1) return chapter
+    const [twin] = remaining.splice(index, 1)
+    if (!twin.completed || chapter.completed) return chapter
+    return { ...chapter, completed: true, attempts: twin.attempts }
+  })
+}
+
+function sameTitle(a: Chapter, b: Chapter): boolean {
+  return JSON.stringify(a.title) === JSON.stringify(b.title)
 }
 
 /** אחוז הפרקים שהושלמו. פרויקט ללא פרקים הוא 0. */

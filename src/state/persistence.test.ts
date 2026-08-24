@@ -26,6 +26,8 @@ const readyProject = {
       code: '<div></div>', completed: true, lesson: null, attempts: 1,
     },
   ],
+  revisions: [],
+  previousVersions: [],
   points: 10,
   error: null,
   createdAt: '2026-08-20T10:00:00.000Z',
@@ -170,5 +172,23 @@ describe('שפה וכותרות', () => {
     const old = { ...readyProject, chapters: [{ id: 'x', title: 'טקסט', code: 'c', completed: false }] }
     const storage = fakeStorage(JSON.stringify({ projects: [old] }))
     expect(loadState(storage).projects[0].chapters).toHaveLength(0)
+  })
+})
+
+describe('שינויים וגרסאות שמורות', () => {
+  it('היסטוריית שינויים ותמונת גרסה נטענות; שינוי שנקטע נטען ככישלון', () => {
+    const stored = {
+      ...readyProject,
+      revisions: [
+        { id: 'r1', instruction: 'תגדיל', status: 'applied', message: null, createdAt: '' },
+        { id: 'r2', instruction: 'תקטין', status: 'working', message: null, createdAt: '' },
+      ],
+      previousVersions: [{ code: '<html>v1</html>', chapters: readyProject.chapters }],
+    }
+    const loaded = loadState(fakeStorage(JSON.stringify({ projects: [stored] }))).projects[0]
+    expect(loaded.revisions.map((r) => r.status)).toEqual(['applied', 'failed'])
+    expect(loaded.revisions[1].message).toBe('interrupted')
+    expect(loaded.previousVersions[0].code).toBe('<html>v1</html>')
+    expect(loaded.previousVersions[0].chapters[0].completed).toBe(true)
   })
 })

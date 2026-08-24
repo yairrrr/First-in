@@ -17,6 +17,8 @@ function makeProject(): Project {
     status: 'building',
     code: '',
     chapters: [],
+    revisions: [],
+    previousVersions: [],
     points: 0,
     error: null,
     createdAt: '2026-08-20T10:00:00.000Z',

@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useApp } from './AppContext'
 import { createProvider, type ProviderKind } from '../llm/createProvider'
 import { buildProject } from '../services/projectBuilder'
+import { reviseProject } from '../services/projectReviser'
 import { splitCode } from '../services/codeSplitter'
 import { exerciseKindFor, generateLesson } from '../services/lessonGenerator'
 import { rankForXp } from './rank'
@@ -53,6 +54,8 @@ export function useProjectActions() {
         status: 'building',
         code: '',
         chapters: [],
+        revisions: [],
+        previousVersions: [],
         points: 0,
         error: null,
         createdAt: new Date().toISOString(),
@@ -125,7 +128,61 @@ export function useProjectActions() {
     [dispatch],
   )
 
-  return { startProject, loadLesson, answerQuestion, deleteProject, retryBuild }
+  /**
+   * הערה על הפרויקט: "תגדיל את הכפתורים". המודל משכתב את הקובץ,
+   * הפרקים מתחלקים מחדש, וההתקדמות על פרקים שלא השתנו נשמרת.
+   */
+  const reviseProjectWith = useCallback(
+    (project: Project, instruction: string) => {
+      const revision = {
+        id: crypto.randomUUID(),
+        instruction: instruction.trim(),
+        status: 'working' as const,
+        message: null,
+        createdAt: new Date().toISOString(),
+      }
+      dispatch({ type: 'REVISION_STARTED', projectId: project.id, revision })
+      void (async () => {
+        try {
+          const code = await reviseProject(createProvider(project.provider, language), project.code, instruction)
+          dispatch({
+            type: 'REVISION_SUCCEEDED',
+            projectId: project.id,
+            revisionId: revision.id,
+            code,
+            chapters: splitCode(code),
+          })
+        } catch (error) {
+          dispatch({
+            type: 'REVISION_FAILED',
+            projectId: project.id,
+            revisionId: revision.id,
+            message: errorMessage(language, error),
+          })
+        }
+      })()
+    },
+    [dispatch, language],
+  )
+
+  /** חזרה לגרסה הקודמת: הקוד והפרקים חוזרים מתמונת המצב השמורה. */
+  const revertRevision = useCallback(
+    (project: Project) => {
+      if (project.previousVersions.length === 0) return
+      dispatch({ type: 'REVISION_REVERTED', projectId: project.id })
+    },
+    [dispatch],
+  )
+
+  return {
+    startProject,
+    loadLesson,
+    answerQuestion,
+    deleteProject,
+    retryBuild,
+    reviseProject: reviseProjectWith,
+    revertRevision,
+  }
 }
 
 async function runBuild(

@@ -68,10 +68,38 @@ export interface Chapter {
   attempts: number
 }
 
+export type RevisionStatus = 'working' | 'applied' | 'failed'
+
+/**
+ * הערה אחת בשיחה על הפרויקט: "תגדיל את הכפתורים", "תוסיף טיימר".
+ * המודל מקבל את הקוד הנוכחי ומחזיר גרסה מעודכנת.
+ */
+export interface Revision {
+  id: string
+  instruction: string
+  status: RevisionStatus
+  /** הודעת שגיאה לתצוגה, כשנכשל. */
+  message: string | null
+  createdAt: string
+}
+
+/** כמה גרסאות קודמות שומרים לחזרה אחורה. מוגבל בגלל localStorage. */
+export const MAX_PREVIOUS_VERSIONS = 5
+
+/** תמונת מצב של גרסה: הקוד והפרקים יחד, כדי שחזרה אחורה תשחזר גם התקדמות. */
+export interface ProjectVersion {
+  code: string
+  chapters: Chapter[]
+}
+
 export interface Project {
   id: string
   /** מה שהמשתמש ביקש, כלשונו. */
   prompt: string
+  /** השיחה על הפרויקט אחרי הבנייה, מהישן לחדש. */
+  revisions: Revision[]
+  /** גרסאות קודמות, מהישנה לחדשה, לחזרה אחורה. */
+  previousVersions: ProjectVersion[]
   /** הספק שבנה את הפרויקט. השיעורים חייבים להגיע מאותו מקום. */
   provider: 'ollama' | 'fixture'
   status: ProjectStatus
@@ -102,5 +130,9 @@ export type Action =
   | { type: 'PROJECT_DELETED'; projectId: string }
   | { type: 'BUILD_STARTED'; projectId: string }
   | { type: 'LANGUAGE_CHANGED'; language: Language }
+  | { type: 'REVISION_STARTED'; projectId: string; revision: Revision }
+  | { type: 'REVISION_SUCCEEDED'; projectId: string; revisionId: string; code: string; chapters: Chapter[] }
+  | { type: 'REVISION_FAILED'; projectId: string; revisionId: string; message: string }
+  | { type: 'REVISION_REVERTED'; projectId: string }
   | { type: 'LESSON_LOADED'; projectId: string; chapterId: string; lesson: Lesson }
   | { type: 'CHAPTER_ANSWERED'; projectId: string; chapterId: string; correct: boolean }

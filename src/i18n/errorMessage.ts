@@ -18,3 +18,9 @@ export function errorMessage(language: Language, error: unknown): string {
   if (error instanceof Error && error.message) return error.message
   return translate(language, 'error.unknown')
 }
+
+/** הודעה של שינוי שנשמר: קוד 'interrupted' מתורגם, טקסט אחר מוצג כפי שהוא. */
+export function revisionMessage(language: Language, message: string | null): string | null {
+  if (message === 'interrupted') return translate(language, 'revise.interrupted')
+  return message
+}
