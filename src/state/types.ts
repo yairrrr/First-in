@@ -35,6 +35,11 @@ export interface Lesson {
   difficulty: LessonDifficulty
   /** ההסבר הקצר על עיקרון הקוד — המסך הראשון של השיעור. */
   concept: string
+  /**
+   * שורה עד שלוש שורות אמיתיות מהקוד שמדגימות את העיקרון.
+   * מי שברמה נמוכה לא יודע תחביר — חייבים להראות, לא רק לספר.
+   */
+  example: string
   exercise: Exercise
 }
 

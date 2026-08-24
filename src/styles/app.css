@@ -1049,3 +1049,53 @@ a {
   .language-label { display: none; }
   .preview { min-height: 440px; height: 70vh; }
 }
+
+/* ---------- קוד מודגש ---------- */
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #d6d6e4;
+  border-inline-start: 3px solid var(--brand-cyan);
+}
+
+.code-compact {
+  max-height: none;
+  padding: 12px 14px;
+  font-size: 13.5px;
+}
+
+.tk-keyword { color: #c792ea; }
+.tk-string { color: #7ee7c7; }
+.tk-number { color: #ffb86c; }
+.tk-comment { color: #6f7189; font-style: italic; }
+.tk-tag { color: #82aaff; }
+.tk-attr { color: #c3e88d; }
+.tk-selector { color: #ffcb6b; }
+.tk-property { color: #89ddff; }
+.tk-fn { color: #ffd580; }
+.tk-punct { color: #9aa0b8; }
+
+/* קוד בתוך שורת טקסט: `כך` */
+.inline-code {
+  padding: 1px 7px;
+  background: rgba(43, 212, 240, 0.12);
+  border: 1px solid rgba(43, 212, 240, 0.3);
+  border-radius: 6px;
+  color: var(--brand-cyan);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  unicode-bidi: embed;
+}
+
+/* דוגמת הקוד בכרטיס העיקרון */
+.example {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.example-label {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+}

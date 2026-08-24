@@ -37,12 +37,17 @@ export function exerciseKindFor(difficulty: LessonDifficulty, chapterIndex: numb
 export const MAX_QUESTION_CHARS = 120
 export const MAX_OPTION_CHARS = 70
 export const MAX_CONCEPT_CHARS = 320
+export const MAX_EXAMPLE_CHARS = 220
+export const MAX_EXAMPLE_LINES = 3
 
 export const LESSON_SYSTEM_PROMPT = [
   'You create one short interactive lesson about one piece of code the learner just built.',
   'The "concept" field is a very short paragraph, 2 to 3 sentences, teaching the single most',
   'important principle this code demonstrates. It must stand on its own before the exercise.',
   'Everything must be about THIS code specifically, never general trivia.',
+  'The "example" field is 1 to 3 real lines copied from this code that show the principle,',
+  'exactly as written (same spelling, same punctuation). The learner may not know any syntax,',
+  'so the example is how they see what the words in the concept actually look like in code.',
   'Readability rules, always: short sentences, one idea per sentence, concrete everyday words.',
   'A question is at most 15 words and describes ONE simple situation.',
   'Never chain conditions ("if X while Y when Z"). Never stack two questions into one.',
@@ -58,7 +63,8 @@ const DIFFICULTY_PROMPTS: Record<LessonDifficulty, string> = {
     'The learner is a complete beginner with zero background: no technical jargon at all.',
     'Use only words any person knows. If you must name a code thing, describe it in everyday words',
     '(for example "the line that shows the number on the screen").',
-    'Teach one tiny fundamental principle. Quote at most one short line of code inside the concept.',
+    'Teach one tiny fundamental principle. The example must be exactly ONE short line.',
+    'If the concept mentions any code word, that word must appear in the example.',
   ].join(' '),
   core: [
     'The learner knows basic programming but is not an expert.',
@@ -85,6 +91,8 @@ const KIND_PROMPTS: Record<ExerciseKind, string> = {
     'Split at natural points. Each token is a few characters, not a whole statement.',
     'The "instruction" says in plain words what the assembled line does, without revealing the order.',
     'The learner will tap the shuffled tokens in order to rebuild the line.',
+    'Pick a different line for the exercise than the one in the example, so the example',
+    'teaches the pattern without handing over the answer.',
   ].join(' '),
 }
 
@@ -92,21 +100,23 @@ export const CHOICE_SCHEMA: Record<string, unknown> = {
   type: 'object',
   properties: {
     concept: { type: 'string' },
+    example: { type: 'string' },
     question: { type: 'string' },
     options: { type: 'array', items: { type: 'string' }, minItems: OPTION_COUNT, maxItems: OPTION_COUNT },
     correctIndex: { type: 'integer', minimum: 0, maximum: OPTION_COUNT - 1 },
   },
-  required: ['concept', 'question', 'options', 'correctIndex'],
+  required: ['concept', 'example', 'question', 'options', 'correctIndex'],
 }
 
 export const ASSEMBLE_SCHEMA: Record<string, unknown> = {
   type: 'object',
   properties: {
     concept: { type: 'string' },
+    example: { type: 'string' },
     instruction: { type: 'string' },
     tokens: { type: 'array', items: { type: 'string' }, minItems: MIN_TOKENS, maxItems: MAX_TOKENS },
   },
-  required: ['concept', 'instruction', 'tokens'],
+  required: ['concept', 'example', 'instruction', 'tokens'],
 }
 
 /** נזרקת כשהמודל החזיר שיעור שאינו עומד במבנה המחייב. */
@@ -173,8 +183,14 @@ export function parseLesson(kind: ExerciseKind, difficulty: LessonDifficulty, te
   if (!concept) throw new LessonError('חסרה פסקת העיקרון')
   if (concept.length > MAX_CONCEPT_CHARS) throw new LessonError('פסקת העיקרון ארוכה מדי')
 
+  const example = asText(parsed.example)
+  if (!example) throw new LessonError('חסרה דוגמת קוד')
+  if (example.length > MAX_EXAMPLE_CHARS || example.split('\n').length > MAX_EXAMPLE_LINES) {
+    throw new LessonError('דוגמת הקוד ארוכה מדי — עד שלוש שורות קצרות')
+  }
+
   const exercise = kind === 'choice' ? parseChoice(parsed) : parseAssemble(parsed)
-  return { difficulty, concept, exercise }
+  return { difficulty, concept, example, exercise }
 }
 
 function parseChoice(parsed: Record<string, unknown>): ChoiceExercise {

@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { nextChapterToPrefetch, useProjectActions } from '../state/useProjectActions'
 import { BidiText } from '../components/BidiText'
+import { CodeBlock, languageForChapter } from '../components/CodeBlock'
+import { RichText } from '../components/RichText'
 import { useT } from '../i18n/useT'
 import { chapterTitleText } from '../i18n/chapterTitle'
 import type { AssembleExercise, Chapter, ChoiceExercise, Project } from '../state/types'
@@ -44,14 +46,10 @@ export function ChapterPage() {
       {collapseCode ? (
         <details className="code-details">
           <summary>{t('chapter.showCode')}</summary>
-          <pre className="code">
-            <code>{chapter.code}</code>
-          </pre>
+          <CodeBlock code={chapter.code} language={languageForChapter(chapter.title)} />
         </details>
       ) : (
-        <pre className="code">
-          <code>{chapter.code}</code>
-        </pre>
+        <CodeBlock code={chapter.code} language={languageForChapter(chapter.title)} />
       )}
 
       <LessonBlock project={project} chapter={chapter} />
@@ -141,7 +139,19 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
     return (
       <div className="concept-card">
         <span className="concept-label">{t('chapter.concept')}</span>
-        <p className="concept-text">{chapter.lesson.concept}</p>
+        <p className="concept-text">
+          <RichText text={chapter.lesson.concept} />
+        </p>
+        {chapter.lesson.example && (
+          <div className="example">
+            <span className="example-label">{t('chapter.example')}</span>
+            <CodeBlock
+              code={chapter.lesson.example}
+              language={languageForChapter(chapter.title)}
+              compact
+            />
+          </div>
+        )}
         <button type="button" className="primary" onClick={() => setPhase('exercise')}>
           {t('chapter.toExercise')}
         </button>
@@ -152,7 +162,17 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
   const exercise = chapter.lesson.exercise
   return (
     <>
-      {chapter.completed && <p className="concept-text muted-concept">{chapter.lesson.concept}</p>}
+      {chapter.completed && (
+        <p className="concept-text muted-concept">
+          <RichText text={chapter.lesson.concept} />
+        </p>
+      )}
+      {chapter.lesson.example && (
+        <div className="example">
+          <span className="example-label">{t('chapter.example')}</span>
+          <CodeBlock code={chapter.lesson.example} language={languageForChapter(chapter.title)} compact />
+        </div>
+      )}
       {exercise.kind === 'choice' ? (
         <ChoiceBlock project={project} chapter={chapter} exercise={exercise} />
       ) : (
@@ -190,7 +210,9 @@ function ChoiceBlock({
 
   return (
     <div className="question">
-      <h3>{exercise.question}</h3>
+      <h3>
+        <RichText text={exercise.question} />
+      </h3>
 
       <div className="options">
         {exercise.options.map((option, optionIndex) => {
@@ -208,7 +230,9 @@ function ChoiceBlock({
               <span className="option-letter" aria-hidden="true">
                 {OPTION_LETTERS[language][optionIndex]}
               </span>
-              {option}
+              <span>
+                <RichText text={option} />
+              </span>
             </button>
           )
         })}
@@ -276,7 +300,9 @@ function AssembleBlock({
 
   return (
     <div className="question">
-      <h3>{exercise.instruction}</h3>
+      <h3>
+        <RichText text={exercise.instruction} />
+      </h3>
 
       <div
         className={`answer-row ${chapter.completed ? 'assembled' : ''} ${

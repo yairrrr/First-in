@@ -161,7 +161,8 @@ function toLesson(candidate: unknown): Lesson | null {
   const exercise = toExercise(candidate.exercise)
   if (!exercise) return null
 
-  return { difficulty, concept: candidate.concept, exercise }
+  const example = typeof candidate.example === 'string' ? candidate.example : ''
+  return { difficulty, concept: candidate.concept, example, exercise }
 }
 
 function toExercise(candidate: unknown): Exercise | null {

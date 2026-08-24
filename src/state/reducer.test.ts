@@ -107,6 +107,7 @@ describe('reducer', () => {
     const lesson = {
       difficulty: 'core' as const,
       concept: 'עיקרון',
+      example: 'x = 1',
       exercise: {
         kind: 'choice' as const,
         question: 'שאלה?',
@@ -232,6 +233,7 @@ describe('XP גלובלי', () => {
   const lesson = {
     difficulty: 'core' as const,
     concept: 'עיקרון',
+   example: 'x = 1',
     exercise: { kind: 'choice' as const, question: 'ש?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 0 },
   }
 

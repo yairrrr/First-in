@@ -90,6 +90,7 @@ describe('טעינת שיעורים שמורים', () => {
   const lesson = {
     difficulty: 'core',
     concept: 'עיקרון',
+    example: 'x = 1',
     exercise: { kind: 'choice', question: 'שאלה?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 1 },
   }
 
@@ -126,6 +127,7 @@ describe('טעינת שיעורים שמורים', () => {
     const assemble = {
       difficulty: 'intro',
       concept: 'עיקרון',
+      example: 'x',
       exercise: { kind: 'assemble', instruction: 'הרכב', tokens: ['a', 'b', 'c'] },
     }
     const chapter = loadState(storedWith({ lesson: assemble })).projects[0].chapters[0]

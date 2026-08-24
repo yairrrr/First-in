@@ -17,6 +17,7 @@ describe('nextChapterToPrefetch', () => {
   const lesson = {
     difficulty: 'intro' as const,
     concept: 'c',
+    example: 'x = 1',
     exercise: { kind: 'assemble' as const, instruction: 'i', tokens: ['a', 'b', 'c'] },
   }
 

@@ -13,6 +13,7 @@ import type { LlmProvider, LlmRequest } from '../llm/types'
 
 const validChoice = {
   concept: 'הפונקציה בודקת אם שני קלפים תואמים.',
+  example: 'if (card1.dataset.symbol === card2.dataset.symbol) {',
   question: 'מה קורה כשהקלף השני אינו תואם?',
   options: ['שני הקלפים נסגרים אחרי השהיה', 'הקלף נשאר פתוח', 'המונה מתאפס', 'המשחק נגמר'],
   correctIndex: 0,
@@ -20,6 +21,7 @@ const validChoice = {
 
 const validAssemble = {
   concept: 'כדי לשנות מה שכתוב על המסך, הקוד פונה לאזור לפי השם שלו.',
+  example: "const moveDisplay = document.getElementById('move-count');",
   instruction: 'הרכב את השורה שמאפסת את מונה המהלכים על המסך',
   tokens: ['moveDisplay', '.innerText', '=', 'moves;'],
 }
@@ -94,6 +96,20 @@ describe('exerciseKindFor', () => {
   })
 })
 
+describe('דוגמת קוד', () => {
+  it('נדרשת, ומוגבלת לשלוש שורות קצרות', () => {
+    expect(() => parseLesson('choice', 'core', JSON.stringify({ ...validChoice, example: '' }))).toThrow(/דוגמת/)
+    const long = { ...validChoice, example: 'a\nb\nc\nd' }
+    expect(() => parseLesson('choice', 'core', JSON.stringify(long))).toThrow(/שלוש שורות/)
+    expect(parseLesson('choice', 'core', JSON.stringify(validChoice)).example).toBe(validChoice.example)
+  })
+
+  it('הסכמות דורשות דוגמה', () => {
+    expect((CHOICE_SCHEMA.required as string[])).toContain('example')
+    expect((ASSEMBLE_SCHEMA.required as string[])).toContain('example')
+  })
+})
+
 describe('קריאות', () => {
   it('דוחה שאלה ארוכה ומסובכת', () => {
     const long = { ...validChoice, question: 'מה '.repeat(60) }
@@ -152,7 +168,7 @@ describe('generateLesson ו-buildPrompt', () => {
       title: 'פרק', code: 'x', language: 'he', difficulty: 'intro', kind: 'assemble',
     })
     expect(prompt).toContain('no technical jargon')
-    expect(prompt).toContain('one short line of code')
+    expect(prompt).toContain('exactly ONE short line')
     expect(prompt).toContain('tap the shuffled tokens')
   })
 
