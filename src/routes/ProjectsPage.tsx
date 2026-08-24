@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { useProjectActions } from '../state/useProjectActions'
 import { progressPercent } from '../state/reducer'
+import logoMark from '../assets/logo-mark.png'
 
 /** רשימת הפרויקטים, ונקודת הכניסה: פרומפט חופשי. */
 export function ProjectsPage() {
@@ -21,6 +22,12 @@ export function ProjectsPage() {
 
   return (
     <section className="panel">
+      <div className="hero">
+        <img src={logoMark} alt="" className="hero-logo" aria-hidden="true" />
+        <h1 className="hero-name" dir="ltr">First-In</h1>
+        <p className="hero-slogan" dir="ltr">Build what you want. Learn what you built.</p>
+      </div>
+
       <h2 className="hero-title">מה נבנה היום?</h2>
 
       <form className="build-form" onSubmit={handleSubmit}>

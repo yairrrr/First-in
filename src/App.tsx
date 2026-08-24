@@ -13,14 +13,22 @@ export function App() {
       </div>
 
       <header className="header">
-        <Link to="/" className="brand">
-          <img src={logoMark} alt="First-In" className="logo-img" />
+        {/* שלושה אזורים שווי רוחב, כדי שהשם יישב במרכז אמיתי של המסך */}
+        <div className="header-side">
+          <Link to="/" className="logo-link">
+            <img src={logoMark} alt="First-In" className="logo-img" />
+          </Link>
+          <StageBanner />
+        </div>
+
+        <Link to="/" className="brand-center">
           <span className="brand-name">First-In</span>
+          <span className="slogan" dir="ltr">
+            Build what you want. Learn what you built.
+          </span>
         </Link>
-        <StageBanner />
-        <span className="tagline" dir="ltr">
-          Build with AI. Learn the code.
-        </span>
+
+        <div className="header-side header-end" />
       </header>
 
       <main className="main">
