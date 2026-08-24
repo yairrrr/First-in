@@ -9,6 +9,9 @@ import {
 } from './codeSplitter'
 import memoryHtml from '../llm/fixtures/samples/memory.html?raw'
 import todoHtml from '../llm/fixtures/samples/todo.html?raw'
+import { chapterTitleText } from '../i18n/chapterTitle'
+
+const he = (chapter: Parameters<typeof chapterTitleText>[1]) => chapterTitleText('he', chapter)
 
 describe('extractTagContent', () => {
   it('מחלץ תוכן מתגית עם מאפיינים', () => {
@@ -117,7 +120,7 @@ describe('splitCode על פלט אמיתי של המודל', () => {
       it('אין פרק ריק ואין פרק ללא כותרת', () => {
         for (const chapter of chapters) {
           expect(chapter.code.trim().length).toBeGreaterThan(0)
-          expect(chapter.title.trim().length).toBeGreaterThan(0)
+          expect(he(chapter).trim().length).toBeGreaterThan(0)
         }
       })
 
@@ -133,12 +136,16 @@ describe('splitCode על פלט אמיתי של המודל', () => {
       })
 
       it('הפרק הראשון הוא מבנה העמוד', () => {
-        expect(chapters[0].title).toContain('מבנה העמוד')
+        expect(chapters[0].title.kind).toBe('markup')
+        expect(he(chapters[0])).toBe('מבנה העמוד')
       })
 
-      it('יש פרק עיצוב ופרק פונקציה', () => {
-        expect(chapters.some((c) => c.title.startsWith('עיצוב:'))).toBe(true)
-        expect(chapters.some((c) => c.title.startsWith('פונקציה:'))).toBe(true)
+      it('יש פרק עיצוב ופרק פונקציה, והכותרות מתורגמות', () => {
+        expect(chapters.some((c) => c.title.kind === 'css')).toBe(true)
+        expect(chapters.some((c) => c.title.kind === 'function')).toBe(true)
+        const fn = chapters.find((c) => c.title.kind === 'function')!
+        expect(he(fn)).toMatch(/^פונקציה: /)
+        expect(chapterTitleText('en', fn)).toMatch(/^Function: /)
       })
     })
   }
@@ -149,9 +156,11 @@ describe('splitCode על פלט אמיתי של המודל', () => {
     expect(splitCode(html).length).toBeLessThanOrEqual(MAX_CHAPTERS)
   })
 
-  it('פרק שבלע יחידות מצהיר על כך בכותרת', () => {
+  it('פרק שבלע יחידות מצהיר על כך בכותרת, בשתי השפות', () => {
     const chapters = splitCode(memoryHtml)
-    const swallower = chapters.find((c) => c.code.includes('function resetGame'))
-    expect(swallower?.title).toContain('ועוד')
+    const swallower = chapters.find((c) => c.code.includes('function resetGame'))!
+    expect(swallower.extraUnits).toBeGreaterThan(0)
+    expect(he(swallower)).toContain('ועוד')
+    expect(chapterTitleText('en', swallower)).toContain('more unit')
   })
 })

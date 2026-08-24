@@ -1,0 +1,11 @@
+{
+  "concept": "The `flipCard` function manages the game's state by using a guard clause to prevent interaction with already matched or flipped cards. It uses the `flippedCards` array to buffer elements, only triggering the match logic or the 'no-match' delay once the array reaches a length of exactly 2.",
+  "question": "When two cards do not match, why is the `canClick` variable set back to `true` inside the `setTimeout` callback rather than immediately after the `if` check?",
+  "options": [
+    "To ensure the timer allows the user to see the cards are not a match before the game accepts new clicks.",
+    "To prevent the `flippedCards` array from being cleared until the 1000ms duration has passed.",
+    "Because `canClick` must remain false until the `flippedCards` array is emptied.",
+    "To ensure the `moves` counter does not increment again until the timeout finishes."
+  ],
+  "correctIndex": 0
+}

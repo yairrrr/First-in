@@ -1,6 +1,8 @@
+import { useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { useProjectActions } from '../state/useProjectActions'
+import { useT } from '../i18n/useT'
 import type { Project } from '../state/types'
 
 /**
@@ -11,61 +13,76 @@ export function ProjectPage() {
   const { id } = useParams()
   const { state } = useApp()
   const { retryBuild } = useProjectActions()
+  const { t } = useT()
+  const previewRef = useRef<HTMLIFrameElement>(null)
   const project = state.projects.find((candidate) => candidate.id === id)
 
   if (!project) {
     return (
       <section className="panel">
-        <h2>הפרויקט לא נמצא</h2>
-        <Link to="/">חזרה לרשימה</Link>
+        <h2>{t('project.notFound')}</h2>
+        <Link to="/">{t('nav.back')}</Link>
       </section>
     )
   }
 
   return (
-    <section className="panel">
+    <section className="panel panel-wide">
       {/* הפרומפט הוא טקסט של המשתמש, ויכול להיות בכל שפה. dir="auto" מונע פיסוק שקופץ. */}
       <h2 dir="auto">{project.prompt}</h2>
 
       {project.status === 'building' && (
         <div className="waiting">
           <div className="pulse" aria-hidden="true" />
-          <p>בונה את הפרויקט שלך.</p>
-          <p className="empty">המודל רץ מקומית על המחשב שלך. זה לוקח בערך שתי דקות.</p>
+          <p>{t('project.building')}</p>
+          <p className="empty">{t('project.buildingHint')}</p>
         </div>
       )}
 
       {project.status === 'failed' && (
         <div className="error">
-          <p>הבנייה נכשלה.</p>
+          <p>{t('project.failed')}</p>
           <p className="empty">{project.error}</p>
           <div className="error-actions">
             <button type="button" className="primary" onClick={() => retryBuild(project)}>
-              לבנות שוב
+              {t('project.rebuild')}
             </button>
-            <Link to="/">חזרה לרשימה</Link>
+            <Link to="/">{t('nav.back')}</Link>
           </div>
         </div>
       )}
 
       {project.status === 'ready' && (
         <>
-          <iframe
-            className="preview"
-            title={project.prompt}
-            srcDoc={project.code}
-            // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
-            sandbox="allow-scripts"
-          />
-          <Link to={`/project/${project.id}/study`} className="study-cta">
-            <span>ללמוד את הקוד הזה</span>
-            <span className="meta">{project.chapters.length} פרקים ממתינים</span>
-          </Link>
-          <div className="project-tools">
-            <button type="button" className="ghost" onClick={() => downloadProject(project)}>
-              הורדה כקובץ HTML
-            </button>
+          <div className="preview-frame">
+            <iframe
+              ref={previewRef}
+              className="preview"
+              title={project.prompt}
+              srcDoc={project.code}
+              // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
+              sandbox="allow-scripts"
+            />
+            <div className="preview-tools">
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => void previewRef.current?.requestFullscreen?.()}
+              >
+                {t('project.fullscreen')}
+              </button>
+              <button type="button" className="ghost" onClick={() => downloadProject(project)}>
+                {t('project.download')}
+              </button>
+            </div>
           </div>
+
+          <Link to={`/project/${project.id}/study`} className="study-cta">
+            <span>{t('project.study')}</span>
+            <span className="meta">
+              {t('project.chaptersWaiting', { count: project.chapters.length })}
+            </span>
+          </Link>
         </>
       )}
     </section>

@@ -1,4 +1,13 @@
-import type { AppState, Chapter, Exercise, Lesson, Project, ProjectStatus } from './types'
+import type {
+  AppState,
+  Chapter,
+  ChapterTitle,
+  Exercise,
+  Language,
+  Lesson,
+  Project,
+  ProjectStatus,
+} from './types'
 import { MAX_TOKENS, MIN_TOKENS, OPTION_COUNT } from '../services/lessonGenerator'
 
 /**
@@ -15,7 +24,7 @@ export interface StateStorage {
   setItem(key: string, value: string): void
 }
 
-const EMPTY: AppState = { projects: [], xp: 0 }
+const EMPTY: AppState = { projects: [], xp: 0, language: 'he' }
 
 export function loadState(storage: StateStorage | undefined): AppState {
   if (!storage) return EMPTY
@@ -31,7 +40,7 @@ export function loadState(storage: StateStorage | undefined): AppState {
 
   try {
     const parsed: unknown = JSON.parse(raw)
-    return { projects: toProjects(parsed), xp: toXp(parsed) }
+    return { projects: toProjects(parsed), xp: toXp(parsed), language: toLanguage(parsed) }
   } catch {
     return EMPTY
   }
@@ -44,6 +53,11 @@ export function saveState(storage: StateStorage | undefined, state: AppState): v
   } catch {
     // מכסת האחסון מלאה. הפרויקט ימשיך לעבוד, פשוט לא ישרוד רענון.
   }
+}
+
+function toLanguage(parsed: unknown): Language {
+  if (!isRecord(parsed)) return 'he'
+  return parsed.language === 'en' ? 'en' : 'he'
 }
 
 /** מצב שנשמר לפני שהיה XP נטען עם אפס — לא מפיל ולא ממציא. */
@@ -100,16 +114,39 @@ function toChapter(candidate: unknown): Chapter[] {
   if (!isRecord(candidate)) return []
   if (typeof candidate.id !== 'string' || typeof candidate.code !== 'string') return []
 
+  const title = toTitle(candidate.title)
+  if (!title) return []
+
   return [
     {
       id: candidate.id,
-      title: typeof candidate.title === 'string' ? candidate.title : candidate.id,
+      title,
+      extraUnits: typeof candidate.extraUnits === 'number' ? candidate.extraUnits : 0,
       code: candidate.code,
       completed: candidate.completed === true,
       lesson: toLesson(candidate.lesson),
       attempts: typeof candidate.attempts === 'number' ? candidate.attempts : 0,
     },
   ]
+}
+
+/** כותרת בפורמט הישן (מחרוזת) אינה ניתנת לתרגום; הפרק נזרק והפרויקט ייבנה מחדש. */
+function toTitle(candidate: unknown): ChapterTitle | null {
+  if (!isRecord(candidate)) return null
+  switch (candidate.kind) {
+    case 'markup':
+      return { kind: 'markup' }
+    case 'css':
+      return typeof candidate.selector === 'string' && typeof candidate.more === 'number'
+        ? { kind: 'css', selector: candidate.selector, more: candidate.more }
+        : null
+    case 'function':
+      return typeof candidate.name === 'string' ? { kind: 'function', name: candidate.name } : null
+    case 'wiring':
+      return typeof candidate.n === 'number' ? { kind: 'wiring', n: candidate.n } : null
+    default:
+      return null
+  }
 }
 
 /**

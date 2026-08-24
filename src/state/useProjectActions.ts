@@ -5,7 +5,9 @@ import { buildProject } from '../services/projectBuilder'
 import { splitCode } from '../services/codeSplitter'
 import { exerciseKindFor, generateLesson } from '../services/lessonGenerator'
 import { rankForXp } from './rank'
-import type { Action, Chapter, Project } from './types'
+import { chapterTitleText } from '../i18n/chapterTitle'
+import { errorMessage } from '../i18n/errorMessage'
+import type { Action, Chapter, Language, Project } from './types'
 
 /**
  * העבודה האסינכרונית יושבת כאן ולא ב-reducer.
@@ -39,6 +41,7 @@ export function nextChapterToPrefetch(project: Project, afterChapterId?: string)
 export function useProjectActions() {
   const { state, dispatch } = useApp()
   const xp = state.xp
+  const language = state.language
 
   /** פותח פרויקט מיד, ומריץ את הבנייה ברקע. מחזיר את המזהה כדי שאפשר יהיה לנווט אליו. */
   const startProject = useCallback(
@@ -56,10 +59,10 @@ export function useProjectActions() {
       }
 
       dispatch({ type: 'PROJECT_CREATED', project })
-      void runBuild(project, kind, dispatch)
+      void runBuild(project, kind, language, dispatch)
       return project.id
     },
-    [dispatch],
+    [dispatch, language],
   )
 
   /**
@@ -81,22 +84,22 @@ export function useProjectActions() {
         // שיעור שנשמר שומר את הרמה שבה נוצר.
         const difficulty = rankForXp(xp).difficulty
         const chapterIndex = project.chapters.findIndex((c) => c.id === chapter.id)
-        const lesson = await generateLesson(createProvider(project.provider), {
-          title: chapter.title,
+        const lesson = await generateLesson(createProvider(project.provider, language), {
+          title: chapterTitleText(language, chapter),
           code: chapter.code,
-          language: 'he',
+          language,
           difficulty,
           kind: exerciseKindFor(difficulty, chapterIndex),
         })
         dispatch({ type: 'LESSON_LOADED', projectId: project.id, chapterId: chapter.id, lesson })
         return null
       } catch (error) {
-        return error instanceof Error ? error.message : 'יצירת השיעור נכשלה'
+        return errorMessage(language, error)
       } finally {
         inFlightLessons.delete(key)
       }
     },
-    [dispatch, xp],
+    [dispatch, xp, language],
   )
 
   const answerQuestion = useCallback(
@@ -110,9 +113,9 @@ export function useProjectActions() {
   const retryBuild = useCallback(
     (project: Project) => {
       dispatch({ type: 'BUILD_STARTED', projectId: project.id })
-      void runBuild(project, project.provider, dispatch)
+      void runBuild(project, project.provider, language, dispatch)
     },
-    [dispatch],
+    [dispatch, language],
   )
 
   const deleteProject = useCallback(
@@ -128,10 +131,11 @@ export function useProjectActions() {
 async function runBuild(
   project: Project,
   kind: ProviderKind,
+  language: Language,
   dispatch: (action: Action) => void,
 ): Promise<void> {
   try {
-    const code = await buildProject(createProvider(kind), project.prompt)
+    const code = await buildProject(createProvider(kind, language), project.prompt)
     dispatch({
       type: 'BUILD_SUCCEEDED',
       projectId: project.id,
@@ -142,7 +146,7 @@ async function runBuild(
     dispatch({
       type: 'BUILD_FAILED',
       projectId: project.id,
-      message: error instanceof Error ? error.message : 'הבנייה נכשלה מסיבה לא ידועה',
+      message: errorMessage(language, error),
     })
   }
 }

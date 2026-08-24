@@ -4,7 +4,7 @@ import { xpForAnswer } from './rank'
 /** נקודות על פרק שנענה נכון בניסיון הראשון. */
 export const POINTS_PER_CHAPTER = 10
 
-export const initialState: AppState = { projects: [], xp: 0 }
+export const initialState: AppState = { projects: [], xp: 0, language: 'he' }
 
 /**
  * הפונקציה היחידה שמשנה מצב באפליקציה.
@@ -14,6 +14,9 @@ export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'PROJECT_CREATED':
       return { ...state, projects: [action.project, ...state.projects] }
+
+    case 'LANGUAGE_CHANGED':
+      return state.language === action.language ? state : { ...state, language: action.language }
 
     case 'PROJECT_DELETED':
       return { ...state, projects: state.projects.filter((p) => p.id !== action.projectId) }

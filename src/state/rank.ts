@@ -8,9 +8,8 @@ import type { LessonDifficulty } from './types'
  */
 
 export interface Rank {
-  /** מספר הדרגה, החל מ-1. */
+  /** מספר הדרגה, החל מ-1. השם מתורגם לפי המספר — ראה strings.ts, rank.N. */
   level: number
-  name: string
   /** XP מינימלי לדרגה. */
   minXp: number
   /** רמת השאלות למי שבדרגה זו. */
@@ -19,11 +18,11 @@ export interface Rank {
 
 /** סולם הדרגות. הסף של כל דרגה גבוה מקודמתה. */
 export const RANKS: readonly Rank[] = [
-  { level: 1, name: 'מתחיל', minXp: 0, difficulty: 'intro' },
-  { level: 2, name: 'לומד', minXp: 60, difficulty: 'intro' },
-  { level: 3, name: 'בונה', minXp: 150, difficulty: 'core' },
-  { level: 4, name: 'מפתח', minXp: 300, difficulty: 'core' },
-  { level: 5, name: 'מומחה', minXp: 500, difficulty: 'deep' },
+  { level: 1, minXp: 0, difficulty: 'intro' },
+  { level: 2, minXp: 60, difficulty: 'intro' },
+  { level: 3, minXp: 150, difficulty: 'core' },
+  { level: 4, minXp: 300, difficulty: 'core' },
+  { level: 5, minXp: 500, difficulty: 'deep' },
 ]
 
 /** XP בסיסי לתשובה נכונה, לפי רמת השאלה שנענתה. */

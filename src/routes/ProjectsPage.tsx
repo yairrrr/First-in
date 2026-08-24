@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { useProjectActions } from '../state/useProjectActions'
 import { progressPercent } from '../state/reducer'
+import { useT } from '../i18n/useT'
 import logoMark from '../assets/logo-mark.png'
 
 /** רשימת הפרויקטים, ונקודת הכניסה: פרומפט חופשי. */
 export function ProjectsPage() {
   const { state } = useApp()
   const { startProject, deleteProject } = useProjectActions()
+  const { t } = useT()
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState('')
   const [demoMode, setDemoMode] = useState(false)
@@ -25,23 +27,23 @@ export function ProjectsPage() {
       <div className="hero">
         <img src={logoMark} alt="" className="hero-logo" aria-hidden="true" />
         <h1 className="hero-name" dir="ltr">First-In</h1>
-        <p className="hero-slogan" dir="ltr">Build what you want. Learn what you built.</p>
+        <p className="hero-slogan" dir="ltr">{t('app.slogan')}</p>
       </div>
 
-      <h2 className="hero-title">מה נבנה היום?</h2>
+      <h2 className="hero-title">{t('home.title')}</h2>
 
       <form className="build-form" onSubmit={handleSubmit}>
         <textarea
           className="prompt-input"
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
-          placeholder="לדוגמה: משחק זיכרון עם 8 זוגות קלפים, מונה מהלכים וכפתור התחלה מחדש"
+          placeholder={t('home.placeholder')}
           rows={4}
         />
 
         <div className="build-actions">
           <button type="submit" className="primary" disabled={!prompt.trim()}>
-            בנה את זה
+            {t('home.build')}
           </button>
 
           <label className="checkbox">
@@ -50,14 +52,14 @@ export function ProjectsPage() {
               checked={demoMode}
               onChange={(event) => setDemoMode(event.target.checked)}
             />
-            מצב הדגמה, ללא Ollama
+            {t('home.demo')}
           </label>
         </div>
       </form>
 
-      <h2>הפרויקטים שלי</h2>
+      <h2>{t('home.projects')}</h2>
       {state.projects.length === 0 ? (
-        <p className="empty">עדיין אין פרויקטים.</p>
+        <p className="empty">{t('home.empty')}</p>
       ) : (
         <ul className="project-list">
           {state.projects.map((project) => (
@@ -67,21 +69,20 @@ export function ProjectsPage() {
               </Link>
               <span className="row-side">
                 <span className="meta">
-                  {project.status === 'building' && 'בבנייה'}
-                  {project.status === 'failed' && 'נכשל'}
-                  {project.status === 'ready' && `${progressPercent(project)}% נלמדו`}
+                  {project.status === 'building' && t('status.building')}
+                  {project.status === 'failed' && t('status.failed')}
+                  {project.status === 'ready' &&
+                    t('status.learned', { percent: progressPercent(project) })}
                 </span>
                 <button
                   type="button"
                   className="delete"
                   onClick={() => {
                     // בנייה עולה שתי דקות. מחיקה בטעות לא צריכה להיות בלחיצה אחת.
-                    if (window.confirm('למחוק את הפרויקט הזה? גם ההתקדמות שנצברה תימחק.')) {
-                      deleteProject(project.id)
-                    }
+                    if (window.confirm(t('home.deleteConfirm'))) deleteProject(project.id)
                   }}
                 >
-                  מחיקה
+                  {t('home.delete')}
                 </button>
               </span>
             </li>

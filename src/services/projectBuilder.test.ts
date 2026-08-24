@@ -41,7 +41,7 @@ describe('buildProject', () => {
 
   it('אינו פונה למודל על פרומפט ריק', async () => {
     const { provider, seen } = providerReturning('<!DOCTYPE html><html></html>')
-    await expect(buildProject(provider, '   ')).rejects.toThrow(/ריק/)
+    await expect(buildProject(provider, '   ')).rejects.toMatchObject({ code: 'emptyPrompt' })
     expect(seen).toHaveLength(0)
   })
 

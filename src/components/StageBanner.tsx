@@ -1,5 +1,7 @@
 import { useApp } from '../state/AppContext'
 import { nextRank, rankForXp, rankProgress } from '../state/rank'
+import { useT } from '../i18n/useT'
+import type { StringKey } from '../i18n/strings'
 
 /**
  * באנר הדרגה בכותרת העליונה: הדרגה הגלובלית של המשתמש, ה-XP,
@@ -7,13 +9,15 @@ import { nextRank, rankForXp, rankProgress } from '../state/rank'
  */
 export function StageBanner() {
   const { state } = useApp()
+  const { t } = useT()
   const rank = rankForXp(state.xp)
   const next = nextRank(state.xp)
   const progress = Math.round(rankProgress(state.xp) * 100)
+  const nameOf = (level: number) => t(`rank.${level}` as StringKey)
 
   const hint = next
-    ? `${next.minXp - state.xp} XP לדרגה ${next.level} · ${next.name}`
-    : 'הדרגה העליונה'
+    ? t('rank.toNext', { xp: next.minXp - state.xp, level: next.level, name: nameOf(next.level) })
+    : t('rank.top')
 
   return (
     <div className="stage-banner" title={hint}>
@@ -22,7 +26,7 @@ export function StageBanner() {
       </span>
       <span className="rank-body">
         <span className="stage-text">
-          דרגה {rank.level} · {rank.name}
+          {t('rank.label', { level: rank.level, name: nameOf(rank.level) })}
         </span>
         <span className="rank-bar" aria-hidden="true">
           <span className="rank-fill" style={{ width: `${progress}%` }} />

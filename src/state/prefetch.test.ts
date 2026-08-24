@@ -3,7 +3,7 @@ import { nextChapterToPrefetch } from './useProjectActions'
 import type { Chapter, Project } from './types'
 
 function chapter(id: string, over: Partial<Chapter> = {}): Chapter {
-  return { id, title: id, code: 'x', completed: false, attempts: 0, lesson: null, ...over }
+  return { id, title: { kind: 'markup' }, extraUnits: 0, code: 'x', completed: false, attempts: 0, lesson: null, ...over }
 }
 
 function project(chapters: Chapter[]): Project {

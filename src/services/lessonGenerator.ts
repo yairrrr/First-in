@@ -141,7 +141,12 @@ export async function generateLesson(
 export function buildPrompt({ title, code, language, difficulty, kind }: LessonRequest): string {
   const inLanguage =
     language === 'he'
-      ? 'Write everything in Hebrew. Keep code identifiers and code tokens in English.'
+      ? [
+          'Write everything in Hebrew. Keep code identifiers and code tokens in English.',
+          'Address the learner in a gender-neutral way: use plural imperative forms',
+          '("סדרו", "בחרו", "חשבו") or impersonal phrasing ("יש לסדר", "מה קורה כאשר").',
+          'Never use singular masculine or feminine forms such as "סדר", "סדרי", "בחר", "בחרי".',
+        ].join(' ')
       : 'Write everything in English.'
 
   return [

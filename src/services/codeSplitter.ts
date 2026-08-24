@@ -1,4 +1,4 @@
-import type { Chapter } from '../state/types'
+import type { Chapter, ChapterTitle } from '../state/types'
 
 /**
  * codeSplitter — קוד HTML שלם נכנס, פרקי למידה יוצאים.
@@ -17,7 +17,7 @@ export const MIN_CHAPTER_CHARS = 150
 export const MAX_CHAPTERS = 12
 
 interface Piece {
-  title: string
+  title: ChapterTitle
   code: string
 }
 
@@ -38,6 +38,7 @@ export function splitCode(html: string): Chapter[] {
   return pieces.map((piece, index) => ({
     id: `ch-${index + 1}`,
     title: piece.title,
+    extraUnits: piece.extraUnits,
     code: piece.code,
     completed: false,
     lesson: null,
@@ -45,9 +46,9 @@ export function splitCode(html: string): Chapter[] {
   }))
 }
 
-function buildPieces(markup: string, css: string, js: string, target: number): Piece[] {
+function buildPieces(markup: string, css: string, js: string, target: number): MergedPiece[] {
   const pieces: Piece[] = []
-  if (markup) pieces.push({ title: 'מבנה העמוד', code: markup })
+  if (markup) pieces.push({ title: { kind: 'markup' }, code: markup })
   pieces.push(...cssPieces(css, target))
   pieces.push(...jsPieces(js, target))
   return mergeTiny(pieces)
@@ -141,10 +142,8 @@ function cssPieces(css: string, target: number): Piece[] {
   }))
 }
 
-function cssTitle(group: CssRule[]): string {
-  const first = group[0].selector
-  if (group.length === 1) return `עיצוב: ${first}`
-  return `עיצוב: ${first} ועוד ${group.length - 1} כללים`
+function cssTitle(group: CssRule[]): ChapterTitle {
+  return { kind: 'css', selector: group[0].selector, more: group.length - 1 }
 }
 
 // ---------- JavaScript ----------
@@ -292,7 +291,7 @@ function jsPieces(js: string, target: number): Piece[] {
     for (const group of groups) {
       wiringCount++
       pieces.push({
-        title: wiringCount === 1 ? 'מצב וחיווט' : `מצב וחיווט ${wiringCount}`,
+        title: { kind: 'wiring', n: wiringCount },
         code: group.map((unit) => unit.code).join('\n\n'),
       })
     }
@@ -302,7 +301,7 @@ function jsPieces(js: string, target: number): Piece[] {
   for (const unit of units) {
     if (unit.name) {
       flushPending()
-      pieces.push({ title: `פונקציה: ${unit.name}`, code: unit.code })
+      pieces.push({ title: { kind: 'function', name: unit.name }, code: unit.code })
     } else {
       pending.push(unit)
     }
@@ -334,38 +333,36 @@ function groupByTarget<T>(items: T[], target: number, sizeOf: (item: T) => strin
   return groups
 }
 
+interface MergedPiece extends Piece {
+  /** יחידות שנבלעו. הכותרת המוצגת מצהירה עליהן — ראה formatChapterTitle. */
+  extraUnits: number
+}
+
 /**
  * פרק קצר מדי מתמזג לשכן, כדי שלא ייווצר פרק שאין עליו מה לשאול.
- * הכותרת מעודכנת בהתאם: פרק שבלע יחידות חייב להצהיר על כך,
- * אחרת המשתמש יקבל שאלה על קוד שהכותרת לא הבטיחה.
+ * פרק שבלע יחידות חייב להצהיר על כך בכותרת, אחרת המשתמש יקבל
+ * שאלה על קוד שהכותרת לא הבטיחה.
  */
-function mergeTiny(pieces: Piece[]): Piece[] {
-  if (pieces.length <= 1) return pieces
+function mergeTiny(pieces: Piece[]): MergedPiece[] {
+  const merged: MergedPiece[] = []
+  if (pieces.length <= 1) return pieces.map((piece) => ({ ...piece, extraUnits: 0 }))
 
-  const merged: { title: string; code: string; swallowed: number }[] = []
   for (const piece of pieces) {
     const previous = merged[merged.length - 1]
     if (piece.code.length < MIN_CHAPTER_CHARS && previous) {
       previous.code = `${previous.code}\n\n${piece.code}`
-      previous.swallowed++
+      previous.extraUnits++
     } else {
-      merged.push({ title: piece.title, code: piece.code, swallowed: 0 })
+      merged.push({ title: piece.title, code: piece.code, extraUnits: 0 })
     }
   }
 
   // אם הפרק הראשון היה קצר ולא היה לו שכן קודם, הוא מתמזג קדימה.
   if (merged.length > 1 && merged[0].code.length < MIN_CHAPTER_CHARS) {
     merged[1].code = `${merged[0].code}\n\n${merged[1].code}`
-    merged[1].swallowed++
+    merged[1].extraUnits++
     merged.shift()
   }
 
-  return merged.map(({ title, code, swallowed }) => ({
-    title: swallowed === 0 ? title : `${title} ${extraUnits(swallowed)}`,
-    code,
-  }))
-}
-
-function extraUnits(count: number): string {
-  return count === 1 ? 'ועוד יחידה אחת' : `ועוד ${count} יחידות`
+  return merged
 }

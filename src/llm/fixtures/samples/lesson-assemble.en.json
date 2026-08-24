@@ -1,0 +1,12 @@
+{
+  "concept": "The tags like `<h1>` and `<div>` act as containers that group related parts of your page together. For example, the <h1> tag tells the computer that the words inside it are the main heading of the page.",
+  "instruction": "Arrange these pieces to create the button that lets the player start the game over.",
+  "tokens": [
+    "<button",
+    " onclick=\"",
+    "resetGame()",
+    "\"",
+    ">",
+    "Restart Game"
+  ]
+}

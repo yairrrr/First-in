@@ -990,3 +990,62 @@ a {
   .hero-title { font-size: 27px; }
   .preview { height: 440px; }
 }
+
+/* ---------- בורר שפה ---------- */
+
+.language-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.language-switch select {
+  padding: 6px 10px;
+  background: var(--surface-solid);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.language-switch select:focus {
+  outline: none;
+  border-color: var(--brand-purple);
+}
+
+/* ---------- תצוגת הפרויקט: גדולה באמת ---------- */
+
+.panel-wide {
+  max-width: 1180px;
+}
+
+.preview-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview {
+  height: calc(100vh - 260px);
+  min-height: 560px;
+}
+
+.preview:fullscreen {
+  border: none;
+  border-radius: 0;
+}
+
+.preview-tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .language-label { display: none; }
+  .preview { min-height: 440px; height: 70vh; }
+}

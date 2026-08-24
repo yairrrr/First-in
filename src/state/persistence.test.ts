@@ -21,7 +21,10 @@ const readyProject = {
   status: 'ready',
   code: '<html></html>',
   chapters: [
-    { id: 'ch-1', title: 'מבנה העמוד', code: '<div></div>', completed: true, lesson: null, attempts: 1 },
+    {
+      id: 'ch-1', title: { kind: 'markup' }, extraUnits: 0,
+      code: '<div></div>', completed: true, lesson: null, attempts: 1,
+    },
   ],
   points: 10,
   error: null,
@@ -31,7 +34,7 @@ const readyProject = {
 describe('saveState ו-loadState', () => {
   it('מחזירים את אותו מצב הלוך ושוב', () => {
     const storage = fakeStorage()
-    const state: AppState = { projects: [readyProject], xp: 0 } as AppState
+    const state: AppState = { projects: [readyProject], xp: 0, language: 'he' } as AppState
 
     saveState(storage, state)
     expect(loadState(storage)).toEqual(state)
@@ -40,19 +43,19 @@ describe('saveState ו-loadState', () => {
   it('שומרים תחת מפתח שנושא מספר גרסה', () => {
     const storage = fakeStorage()
     let key = ''
-    saveState({ getItem: () => null, setItem: (k) => (key = k) }, { projects: [], xp: 0 })
+    saveState({ getItem: () => null, setItem: (k) => (key = k) }, { projects: [], xp: 0, language: 'he' })
     expect(key).toBe(STORAGE_KEY)
     expect(storage.value).toBeNull()
   })
 
   it('מצב ריק כשאין מה לטעון', () => {
-    expect(loadState(fakeStorage())).toEqual({ projects: [], xp: 0 })
-    expect(loadState(undefined)).toEqual({ projects: [], xp: 0 })
+    expect(loadState(fakeStorage())).toEqual({ projects: [], xp: 0, language: 'he' })
+    expect(loadState(undefined)).toEqual({ projects: [], xp: 0, language: 'he' })
   })
 
   it('שורדים מידע פגום ולא מפילים את האפליקציה', () => {
-    expect(loadState(fakeStorage('לא JSON'))).toEqual({ projects: [], xp: 0 })
-    expect(loadState(fakeStorage('{"projects": "not an array"}'))).toEqual({ projects: [], xp: 0 })
+    expect(loadState(fakeStorage('לא JSON'))).toEqual({ projects: [], xp: 0, language: 'he' })
+    expect(loadState(fakeStorage('{"projects": "not an array"}'))).toEqual({ projects: [], xp: 0, language: 'he' })
   })
 
   it('זורקים פרויקט פגום ושומרים את התקינים', () => {
@@ -78,8 +81,8 @@ describe('saveState ו-loadState', () => {
         throw new Error('blocked')
       },
     }
-    expect(loadState(blocked)).toEqual({ projects: [], xp: 0 })
-    expect(() => saveState(blocked, { projects: [], xp: 0 })).not.toThrow()
+    expect(loadState(blocked)).toEqual({ projects: [], xp: 0, language: 'he' })
+    expect(() => saveState(blocked, { projects: [], xp: 0, language: 'he' })).not.toThrow()
   })
 })
 
@@ -96,7 +99,7 @@ describe('טעינת שיעורים שמורים', () => {
         projects: [
           {
             ...readyProject,
-            chapters: [{ id: 'ch-1', title: 'פרק', code: 'x', completed: false, ...chapterExtras }],
+            chapters: [{ id: 'ch-1', title: { kind: 'markup' }, code: 'x', completed: false, ...chapterExtras }],
           },
         ],
       }),
@@ -142,7 +145,7 @@ describe('טעינת שיעורים שמורים', () => {
 describe('XP גלובלי', () => {
   it('נשמר ונטען', () => {
     const storage = fakeStorage()
-    saveState(storage, { projects: [], xp: 135 })
+    saveState(storage, { projects: [], xp: 135, language: 'he' })
     expect(loadState(storage).xp).toBe(135)
   })
 
@@ -150,5 +153,20 @@ describe('XP גלובלי', () => {
     expect(loadState(fakeStorage('{"projects": []}')).xp).toBe(0)
     expect(loadState(fakeStorage('{"projects": [], "xp": "הרבה"}')).xp).toBe(0)
     expect(loadState(fakeStorage('{"projects": [], "xp": -5}')).xp).toBe(0)
+  })
+})
+
+describe('שפה וכותרות', () => {
+  it('שפה נשמרת ונטענת, וברירת המחדל עברית', () => {
+    const storage = fakeStorage()
+    saveState(storage, { projects: [], xp: 0, language: 'en' })
+    expect(loadState(storage).language).toBe('en')
+    expect(loadState(fakeStorage('{"projects": []}')).language).toBe('he')
+  })
+
+  it('פרק עם כותרת בפורמט הישן (מחרוזת) נזרק', () => {
+    const old = { ...readyProject, chapters: [{ id: 'x', title: 'טקסט', code: 'c', completed: false }] }
+    const storage = fakeStorage(JSON.stringify({ projects: [old] }))
+    expect(loadState(storage).projects[0].chapters).toHaveLength(0)
   })
 })

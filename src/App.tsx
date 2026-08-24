@@ -1,9 +1,24 @@
+import { useEffect } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { StageBanner } from './components/StageBanner'
+import { useApp } from './state/AppContext'
+import { useT } from './i18n/useT'
+import { LANGUAGES, type Language } from './i18n/strings'
 import logoMark from './assets/logo-mark.png'
+
+const LANGUAGE_LABELS: Record<Language, string> = { he: 'עברית', en: 'English' }
 
 /** מסגרת קבועה לכל המסכים. המסך עצמו נכנס ל-Outlet. */
 export function App() {
+  const { state, dispatch } = useApp()
+  const { t, language } = useT()
+
+  // כיוון הדף ושפתו נקבעים במסמך עצמו, לא ברכיב — כך גם הגלילה והפיסוק מתיישרים.
+  useEffect(() => {
+    document.documentElement.lang = language
+    document.documentElement.dir = language === 'he' ? 'rtl' : 'ltr'
+  }, [language])
+
   return (
     <div className="app">
       {/* כתמי אור שטים ברקע. עומק בלי הסחה, נכבים ב-prefers-reduced-motion. */}
@@ -24,11 +39,27 @@ export function App() {
         <Link to="/" className="brand-center">
           <span className="brand-name">First-In</span>
           <span className="slogan" dir="ltr">
-            Build what you want. Learn what you built.
+            {t('app.slogan')}
           </span>
         </Link>
 
-        <div className="header-side header-end" />
+        <div className="header-side header-end">
+          <label className="language-switch">
+            <span className="language-label">{t('settings.language')}</span>
+            <select
+              value={state.language}
+              onChange={(event) =>
+                dispatch({ type: 'LANGUAGE_CHANGED', language: event.target.value as Language })
+              }
+            >
+              {LANGUAGES.map((option) => (
+                <option key={option} value={option}>
+                  {LANGUAGE_LABELS[option]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </header>
 
       <main className="main">

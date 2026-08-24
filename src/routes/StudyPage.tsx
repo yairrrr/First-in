@@ -4,12 +4,15 @@ import { useApp } from '../state/AppContext'
 import { nextChapterToPrefetch, useProjectActions } from '../state/useProjectActions'
 import { firstTryStats, progressPercent } from '../state/reducer'
 import { BidiText } from '../components/BidiText'
+import { useT } from '../i18n/useT'
+import { chapterTitleText } from '../i18n/chapterTitle'
 
 /** Your Study — מפת המסע: תחנה לכל פרק, קו שמחבר ביניהן. חדר נפרד, ראה ADR-003. */
 export function StudyPage() {
   const { id } = useParams()
   const { state } = useApp()
   const { loadLesson } = useProjectActions()
+  const { t, language } = useT()
   const project = state.projects.find((candidate) => candidate.id === id)
 
   // מי שנכנס למפה בדרך כלל ימשיך לפרק הבא בתור. השיעור שלו נוצר כבר עכשיו
@@ -24,9 +27,9 @@ export function StudyPage() {
   if (!project || project.status !== 'ready') {
     return (
       <section className="panel">
-        <h2>אין עדיין מה ללמוד</h2>
-        <p className="empty">הפרקים נוצרים אחרי שהפרויקט נבנה.</p>
-        <Link to="/">חזרה לרשימה</Link>
+        <h2>{t('study.nothingYet')}</h2>
+        <p className="empty">{t('study.nothingHint')}</p>
+        <Link to="/">{t('nav.back')}</Link>
       </section>
     )
   }
@@ -38,13 +41,13 @@ export function StudyPage() {
 
   return (
     <section className="panel">
-      <h2>מפת הפרויקט</h2>
+      <h2>{t('study.title')}</h2>
 
       {percent === 100 && (
         <div className="done-banner">
-          <p>🏆 למדת את כל הפרויקט שיצרת.</p>
+          <p>{t('study.done')}</p>
           <p className="empty">
-            {project.points} נקודות, {firstTry} מתוך {completed} פרקים נכונים מהניסיון הראשון.
+            {t('study.doneStats', { points: project.points, firstTry, completed })}
           </p>
         </div>
       )}
@@ -54,8 +57,8 @@ export function StudyPage() {
           <div className="progress-fill" style={{ width: `${percent}%` }} />
         </div>
         <span className="meta">
-          {percent}% נלמדו · {project.points} נקודות
-          {completed > 0 && percent < 100 && ` · ${firstTry}/${completed} מהניסיון הראשון`}
+          {t('study.progress', { percent, points: project.points })}
+          {completed > 0 && percent < 100 && t('study.firstTry', { firstTry, completed })}
         </span>
       </div>
 
@@ -70,15 +73,15 @@ export function StudyPage() {
               </span>
               <Link to={`/project/${project.id}/study/${index + 1}`} className="chapter-card">
                 <span className="chapter-title">
-                  <BidiText text={chapter.title} />
+                  <BidiText text={chapterTitleText(language, chapter)} />
                 </span>
                 <span className="meta">
                   {chapter.completed
                     ? chapter.attempts === 1
-                      ? 'הושלם מהניסיון הראשון'
-                      : 'הושלם'
+                      ? t('study.completedFirstTry')
+                      : t('study.completed')
                     : index === nextIndex
-                      ? 'הבא בתור'
+                      ? t('study.next')
                       : ''}
                 </span>
               </Link>
@@ -87,7 +90,7 @@ export function StudyPage() {
         })}
       </ol>
 
-      <Link to={`/project/${project.id}`}>חזרה לפרויקט</Link>
+      <Link to={`/project/${project.id}`}>{t('nav.backToProject')}</Link>
     </section>
   )
 }

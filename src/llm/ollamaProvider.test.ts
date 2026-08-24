@@ -59,19 +59,19 @@ describe('createOllamaProvider', () => {
     const provider = createOllamaProvider({ fetchImpl: impl })
 
     await expect(provider.complete({ prompt: 'שלום' })).rejects.toThrow(OllamaError)
-    await expect(provider.complete({ prompt: 'שלום' })).rejects.toThrow(/ודא שהוא רץ/)
+    await expect(provider.complete({ prompt: 'שלום' })).rejects.toMatchObject({ code: 'unreachable' })
   })
 
   it('נכשל כשהשרת מחזיר קוד שגיאה', async () => {
     const { impl } = stubFetch(() => jsonResponse({}, false, 404))
     const provider = createOllamaProvider({ fetchImpl: impl })
-    await expect(provider.complete({ prompt: 'שלום' })).rejects.toThrow(/404/)
+    await expect(provider.complete({ prompt: 'שלום' })).rejects.toMatchObject({ code: 'http', status: 404 })
   })
 
   it('נכשל כשהתשובה אינה בפורמט המצופה', async () => {
     const { impl } = stubFetch(() => jsonResponse({ nothing: true }))
     const provider = createOllamaProvider({ fetchImpl: impl })
-    await expect(provider.complete({ prompt: 'שלום' })).rejects.toThrow(/פורמט/)
+    await expect(provider.complete({ prompt: 'שלום' })).rejects.toMatchObject({ code: 'format' })
   })
 })
 

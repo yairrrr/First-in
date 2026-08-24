@@ -38,10 +38,22 @@ export interface Lesson {
   exercise: Exercise
 }
 
+/**
+ * כותרת פרק כמבנה ולא כמחרוזת, כדי שתוצג בשפת הממשק הנוכחית
+ * ולא בשפה שבה הפרויקט נבנה.
+ */
+export type ChapterTitle =
+  | { kind: 'markup' }
+  | { kind: 'css'; selector: string; more: number }
+  | { kind: 'function'; name: string }
+  | { kind: 'wiring'; n: number }
+
 /** פרק למידה אחד: פיסת קוד מהפרויקט של המשתמש, ומה שהוא עשה איתה. */
 export interface Chapter {
   id: string
-  title: string
+  title: ChapterTitle
+  /** יחידות קטנות שנבלעו בפרק כי היו קצרות מדי. הכותרת מצהירה עליהן. */
+  extraUnits: number
   /** החלק מתוך הקוד שנבנה שהפרק הזה מלמד. */
   code: string
   completed: boolean
@@ -68,10 +80,14 @@ export interface Project {
   createdAt: string
 }
 
+export type Language = 'he' | 'en'
+
 export interface AppState {
   projects: Project[]
   /** ניסיון מצטבר של המשתמש, חוצה פרויקטים. קובע את הדרגה — ראה rank.ts. */
   xp: number
+  /** שפת הממשק והשיעורים. */
+  language: Language
 }
 
 export type Action =
@@ -80,5 +96,6 @@ export type Action =
   | { type: 'BUILD_FAILED'; projectId: string; message: string }
   | { type: 'PROJECT_DELETED'; projectId: string }
   | { type: 'BUILD_STARTED'; projectId: string }
+  | { type: 'LANGUAGE_CHANGED'; language: Language }
   | { type: 'LESSON_LOADED'; projectId: string; chapterId: string; lesson: Lesson }
   | { type: 'CHAPTER_ANSWERED'; projectId: string; chapterId: string; correct: boolean }

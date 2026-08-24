@@ -15,17 +15,22 @@ export const BUILD_SYSTEM_PROMPT = [
   'Do not write explanations, comments about your process, or markdown fences.',
 ].join(' ')
 
-/** נזרקת כשהמודל החזיר משהו שאינו מסמך HTML. */
+export type BuildErrorCode = 'emptyPrompt' | 'notHtml'
+
+/** נזרקת על קלט ריק או כשהמודל החזיר משהו שאינו מסמך HTML. נושאת קוד לתרגום. */
 export class BuildError extends Error {
-  constructor(message: string) {
-    super(message)
+  readonly code: BuildErrorCode
+
+  constructor(code: BuildErrorCode) {
+    super(`build:${code}`)
     this.name = 'BuildError'
+    this.code = code
   }
 }
 
 export async function buildProject(provider: LlmProvider, prompt: string): Promise<string> {
   const trimmed = prompt.trim()
-  if (!trimmed) throw new BuildError('הפרומפט ריק')
+  if (!trimmed) throw new BuildError('emptyPrompt')
 
   const { text } = await provider.complete({
     system: BUILD_SYSTEM_PROMPT,
@@ -34,7 +39,7 @@ export async function buildProject(provider: LlmProvider, prompt: string): Promi
 
   const html = stripCodeFence(text)
   if (!looksLikeHtml(html)) {
-    throw new BuildError('המודל לא החזיר מסמך HTML. נסה לנסח את הבקשה מחדש.')
+    throw new BuildError('notHtml')
   }
 
   return html

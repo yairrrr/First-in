@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { nextChapterToPrefetch, useProjectActions } from '../state/useProjectActions'
 import { BidiText } from '../components/BidiText'
+import { useT } from '../i18n/useT'
+import { chapterTitleText } from '../i18n/chapterTitle'
 import type { AssembleExercise, Chapter, ChoiceExercise, Project } from '../state/types'
 
-/** אותיות האפשרויות בשאלה אמריקאית, בסדר הא"ב. */
-const OPTION_LETTERS = ['א', 'ב', 'ג', 'ד']
+/** אותיות האפשרויות בשאלה אמריקאית, לפי שפת הממשק. */
+const OPTION_LETTERS = { he: ['א', 'ב', 'ג', 'ד'], en: ['A', 'B', 'C', 'D'] } as const
 
 /**
  * שלב למידה בודד, בשני מסכים בסגנון Mimo — ראה ADR-010:
@@ -15,6 +17,7 @@ const OPTION_LETTERS = ['א', 'ב', 'ג', 'ד']
 export function ChapterPage() {
   const { id, step } = useParams()
   const { state } = useApp()
+  const { t, language } = useT()
   const project = state.projects.find((candidate) => candidate.id === id)
   const index = Number(step) - 1
   const chapter = project?.chapters[index]
@@ -22,8 +25,8 @@ export function ChapterPage() {
   if (!project || !chapter) {
     return (
       <section className="panel">
-        <h2>הפרק לא נמצא</h2>
-        <Link to="/">חזרה לרשימה</Link>
+        <h2>{t('chapter.notFound')}</h2>
+        <Link to="/">{t('nav.back')}</Link>
       </section>
     )
   }
@@ -34,12 +37,13 @@ export function ChapterPage() {
   return (
     <section className="panel">
       <h2>
-        פרק {index + 1} מתוך {project.chapters.length} — <BidiText text={chapter.title} />
+        {t('chapter.heading', { n: index + 1, total: project.chapters.length })} —{' '}
+        <BidiText text={chapterTitleText(language, chapter)} />
       </h2>
 
       {collapseCode ? (
         <details className="code-details">
-          <summary>להציג את הקוד של הפרק</summary>
+          <summary>{t('chapter.showCode')}</summary>
           <pre className="code">
             <code>{chapter.code}</code>
           </pre>
@@ -53,14 +57,14 @@ export function ChapterPage() {
       <LessonBlock project={project} chapter={chapter} />
 
       <nav className="chapter-nav">
-        {index > 0 && <Link to={`/project/${project.id}/study/${index}`}>הפרק הקודם</Link>}
-        <Link to={`/project/${project.id}/study`}>מפת הפרקים</Link>
+        {index > 0 && <Link to={`/project/${project.id}/study/${index}`}>{t('nav.prev')}</Link>}
+        <Link to={`/project/${project.id}/study`}>{t('nav.map')}</Link>
         {index + 1 < project.chapters.length && (
           <Link
             to={`/project/${project.id}/study/${index + 2}`}
             className={chapter.completed ? 'next-link' : ''}
           >
-            הפרק הבא
+            {t('nav.next')}
           </Link>
         )}
       </nav>
@@ -70,6 +74,7 @@ export function ChapterPage() {
 
 function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter }) {
   const { loadLesson } = useProjectActions()
+  const { t } = useT()
   const [error, setError] = useState<string | null>(null)
   // המסך הראשון הוא העיקרון. פרק שכבר הושלם מדלג ישר לתרגיל הנעול.
   const [phase, setPhase] = useState<'concept' | 'exercise'>('concept')
@@ -104,7 +109,7 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
   if (error) {
     return (
       <div className="error">
-        <p>יצירת השיעור נכשלה.</p>
+        <p>{t('chapter.lessonFailed')}</p>
         <p className="empty">{error}</p>
         <button
           type="button"
@@ -116,7 +121,7 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
             })
           }}
         >
-          לנסות שוב
+          {t('chapter.retry')}
         </button>
       </div>
     )
@@ -126,8 +131,8 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
     return (
       <div className="waiting">
         <div className="pulse" aria-hidden="true" />
-        <p>מכין את השיעור על הקוד הזה.</p>
-        <p className="empty">בערך רבע דקה.</p>
+        <p>{t('chapter.preparing')}</p>
+        <p className="empty">{t('chapter.preparingHint')}</p>
       </div>
     )
   }
@@ -135,10 +140,10 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
   if (phase === 'concept') {
     return (
       <div className="concept-card">
-        <span className="concept-label">העיקרון</span>
+        <span className="concept-label">{t('chapter.concept')}</span>
         <p className="concept-text">{chapter.lesson.concept}</p>
         <button type="button" className="primary" onClick={() => setPhase('exercise')}>
-          הבנתי, לתרגיל
+          {t('chapter.toExercise')}
         </button>
       </div>
     )
@@ -168,6 +173,7 @@ function ChoiceBlock({
   exercise: ChoiceExercise
 }) {
   const { answerQuestion } = useProjectActions()
+  const { language } = useT()
   const [choice, setChoice] = useState<number | null>(null)
 
   useEffect(() => setChoice(null), [chapter.id])
@@ -200,7 +206,7 @@ function ChoiceBlock({
               onClick={() => choose(optionIndex)}
             >
               <span className="option-letter" aria-hidden="true">
-                {OPTION_LETTERS[optionIndex]}
+                {OPTION_LETTERS[language][optionIndex]}
               </span>
               {option}
             </button>
@@ -208,7 +214,7 @@ function ChoiceBlock({
         })}
       </div>
 
-      <Feedback chapter={chapter} correct={correct} answered={answered} locked={locked} />
+      <Feedback chapter={chapter} correct={correct} answered={answered} locked={locked} kind="choice" />
     </div>
   )
 }
@@ -227,6 +233,7 @@ function AssembleBlock({
   exercise: AssembleExercise
 }) {
   const { answerQuestion } = useProjectActions()
+  const { t } = useT()
   // המשבצות מזוהות לפי מיקומן המקורי, כדי ששתי משבצות זהות לא יתבלבלו.
   const [placed, setPlaced] = useState<number[]>([])
   const [wrongOnce, setWrongOnce] = useState(false)
@@ -278,7 +285,7 @@ function AssembleBlock({
             : ''
         }`}
       >
-        {showOrder.length === 0 && <span className="answer-hint">לחץ על המשבצות לפי הסדר</span>}
+        {showOrder.length === 0 && <span className="answer-hint">{t('chapter.tapHint')}</span>}
         {showOrder.map((tokenIndex) => (
           <button
             key={tokenIndex}
@@ -313,6 +320,7 @@ function AssembleBlock({
         correct={chapter.completed}
         answered={wrongOnce || solvedNow}
         locked={chapter.completed && !solvedNow}
+        kind="assemble"
       />
     </div>
   )
@@ -323,25 +331,32 @@ function Feedback({
   correct,
   answered,
   locked,
+  kind,
 }: {
   chapter: Chapter
   correct: boolean
   answered: boolean
   locked: boolean
+  kind: 'choice' | 'assemble'
 }) {
+  const { t } = useT()
   if (correct) {
     return (
       <p className="feedback correct-text">
         {locked && !answered
-          ? 'הפרק הזה כבר הושלם.'
+          ? t('feedback.alreadyDone')
           : chapter.attempts === 1
-            ? 'נכון. מהניסיון הראשון.'
-            : `נכון. אחרי ${chapter.attempts} ניסיונות.`}
+            ? t('feedback.firstTry')
+            : t('feedback.afterAttempts', { attempts: chapter.attempts })}
       </p>
     )
   }
   if (answered) {
-    return <p className="feedback wrong-text">כמעט. נסה סדר אחר.</p>
+    return (
+      <p className="feedback wrong-text">
+        {kind === 'choice' ? t('feedback.wrongChoice') : t('feedback.wrongOrder')}
+      </p>
+    )
   }
   return null
 }

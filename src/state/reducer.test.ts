@@ -3,7 +3,10 @@ import { POINTS_PER_CHAPTER, firstTryStats, initialState, progressPercent, reduc
 import type { Chapter, Project } from './types'
 
 function makeChapter(id: string): Chapter {
-  return { id, title: `פרק ${id}`, code: '<div></div>', completed: false, lesson: null, attempts: 0 }
+  return {
+    id, title: { kind: 'markup' }, extraUnits: 0,
+    code: '<div></div>', completed: false, lesson: null, attempts: 0,
+  }
 }
 
 function makeProject(): Project {
