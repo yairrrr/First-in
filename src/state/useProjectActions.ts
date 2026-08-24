@@ -13,6 +13,28 @@ import type { Action, Chapter, Project } from './types'
 /** בקשות שיעור שרצות כרגע. מודול-גלובלי, כדי לשרוד רכיבים שנהרסים ונבנים. */
 const inFlightLessons = new Set<string>()
 
+/**
+ * הפרק שכדאי להטעין מראש — אחד בדיוק, ולא שרשרת:
+ * בלי נקודת מוצא — הפרק הראשון שטרם הושלם, ורק אם עוד אין לו שיעור.
+ * עם נקודת מוצא — הפרק הצמוד שאחריה בלבד, באותו תנאי.
+ *
+ * הצמצום מכוון: מועמד שכבר יש לו שיעור מחזיר null ולא ממשיך הלאה,
+ * אחרת כל שיעור שנטען היה מצית את הבא, וכל הפרויקט היה נוצר ברקע —
+ * בניגוד ל-ADR-005.
+ */
+export function nextChapterToPrefetch(project: Project, afterChapterId?: string): Chapter | null {
+  let candidate: Chapter | undefined
+  if (afterChapterId) {
+    const anchor = project.chapters.findIndex((c) => c.id === afterChapterId)
+    if (anchor === -1) return null
+    candidate = project.chapters[anchor + 1]
+  } else {
+    candidate = project.chapters.find((c) => !c.completed)
+  }
+  if (!candidate || candidate.completed || candidate.lesson) return null
+  return candidate
+}
+
 export function useProjectActions() {
   const { dispatch } = useApp()
 

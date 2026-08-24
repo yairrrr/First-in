@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
-import { useProjectActions } from '../state/useProjectActions'
+import { nextChapterToPrefetch, useProjectActions } from '../state/useProjectActions'
 import { BidiText } from '../components/BidiText'
 import type { AssembleExercise, Chapter, ChoiceExercise, Project } from '../state/types'
 
@@ -92,6 +92,14 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
       cancelled = true
     }
   }, [project, chapter, loadLesson])
+
+  // ברגע שהפרק הושלם, השיעור הבא מתחיל להיווצר ברקע. בנקודה הזו ההתקדמות
+  // כבר מעודכנת, ולכן רמת הקושי שתיחתם על השיעור הבא מדויקת.
+  useEffect(() => {
+    if (!chapter.completed) return
+    const target = nextChapterToPrefetch(project, chapter.id)
+    if (target) void loadLesson(project, target)
+  }, [chapter.completed, chapter.id, project, loadLesson])
 
   if (error) {
     return (

@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
+import { nextChapterToPrefetch, useProjectActions } from '../state/useProjectActions'
 import { firstTryStats, progressPercent } from '../state/reducer'
 import { BidiText } from '../components/BidiText'
 
@@ -7,7 +9,17 @@ import { BidiText } from '../components/BidiText'
 export function StudyPage() {
   const { id } = useParams()
   const { state } = useApp()
+  const { loadLesson } = useProjectActions()
   const project = state.projects.find((candidate) => candidate.id === id)
+
+  // מי שנכנס למפה בדרך כלל ימשיך לפרק הבא בתור. השיעור שלו נוצר כבר עכשיו
+  // ברקע, כדי שהכניסה לפרק תהיה מיידית במקום רבע דקה של המתנה.
+  useEffect(() => {
+    if (!project || project.status !== 'ready') return
+    const target = nextChapterToPrefetch(project)
+    if (target) void loadLesson(project, target)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id])
 
   if (!project || project.status !== 'ready') {
     return (
