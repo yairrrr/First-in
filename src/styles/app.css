@@ -46,7 +46,8 @@
 :root {
   --font-body: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Secular One', 'Heebo', system-ui, sans-serif;
-  --font-latin: 'Space Grotesk', 'Heebo', system-ui, sans-serif;
+  --font-brand: 'Orbitron', 'Heebo', system-ui, sans-serif;
+  --font-latin: 'Exo 2', 'Heebo', system-ui, sans-serif;
 }
 
 body {
@@ -155,10 +156,11 @@ body {
 }
 
 .brand-name {
-  font-family: var(--font-latin);
-  font-size: 23px;
+  font-family: var(--font-brand);
+  font-size: 21px;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
   background: var(--brand-gradient);
   background-clip: text;
   -webkit-background-clip: text;
@@ -168,8 +170,9 @@ body {
 .slogan {
   font-family: var(--font-latin);
   color: var(--muted);
-  font-size: 11.5px;
-  letter-spacing: 0.6px;
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 1.4px;
 }
 
 /* ---------- באנר השלב ---------- */
@@ -292,10 +295,11 @@ a {
 
 .hero-name {
   margin: 0;
-  font-family: var(--font-latin);
-  font-size: 44px;
-  font-weight: 700;
-  letter-spacing: 2.5px;
+  font-family: var(--font-brand);
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  text-transform: uppercase;
   background: var(--brand-gradient);
   background-clip: text;
   -webkit-background-clip: text;
@@ -305,8 +309,9 @@ a {
 .hero-slogan {
   margin: 0;
   font-family: var(--font-latin);
-  font-size: 15.5px;
-  letter-spacing: 0.8px;
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 2px;
   color: var(--muted);
 }
 
