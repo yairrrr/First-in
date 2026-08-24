@@ -1135,3 +1135,513 @@ a {
   font-size: 12.5px;
   font-weight: 700;
 }
+
+/* =====================================================================
+   סבב עיצוב מוצר — יסודות: פוקוס, תנועה, אייקונים
+   ===================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--brand-cyan);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.page-enter {
+  animation: page-in 0.32s var(--ease) both;
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+[dir='rtl'] .icon-directional {
+  transform: scaleX(-1);
+}
+
+/* כפתורים עם אייקון: אייקון וטקסט באותה שורה, בריווח אחיד */
+.primary,
+.ghost,
+.stage-cta,
+.next-link,
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-button {
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.link-button:hover {
+  color: var(--accent);
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.icon-button:hover {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+/* ---------- צ'יפים ---------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chip-building { background: var(--accent-soft); color: var(--accent); }
+.chip-failed { background: var(--bad-soft); color: var(--bad); }
+.chip-ready { background: rgba(255, 255, 255, 0.07); color: var(--muted); }
+.chip-done { background: var(--good-soft); color: var(--good); }
+
+.xp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  background: rgba(255, 184, 108, 0.12);
+  border-radius: 999px;
+  color: #ffb86c;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ---------- הודעות צפות ---------- */
+
+.toasts {
+  position: fixed;
+  bottom: 24px;
+  inset-inline-end: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  padding: 12px 16px;
+  background: rgba(18, 18, 28, 0.92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  animation: toast-in 0.35s var(--ease) both;
+}
+
+.toast .icon { color: #ffb86c; }
+
+.toast-celebrate {
+  border-color: transparent;
+  background:
+    linear-gradient(rgba(18, 18, 28, 0.94), rgba(18, 18, 28, 0.94)) padding-box,
+    var(--brand-gradient) border-box;
+  box-shadow: 0 10px 34px var(--glow);
+}
+
+.toast-celebrate .icon { color: var(--brand-cyan); }
+
+.toast-body { display: flex; flex-direction: column; gap: 1px; }
+.toast-title { font-weight: 800; font-size: 15px; }
+.toast-detail { color: var(--muted); font-size: 12.5px; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- דף הבית: טופס, "איך זה עובד", כרטיסי פרויקטים ---------- */
+
+.build-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+
+.build-label .icon { color: var(--brand-purple); }
+
+.how {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.how-steps {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.how-step {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  animation: page-in 0.4s var(--ease) both;
+}
+
+.how-step:nth-child(2) { animation-delay: 0.06s; }
+.how-step:nth-child(3) { animation-delay: 0.12s; }
+
+.how-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--accent-soft);
+  border-radius: 12px;
+  color: var(--accent);
+}
+
+.how-number {
+  position: absolute;
+  top: 14px;
+  inset-inline-end: 16px;
+  font-family: var(--font-brand);
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.12);
+}
+
+.how-title { font-weight: 800; font-size: 16px; }
+.how-text { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+.project-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 calc(50% - 7px);
+  min-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.project-card:hover {
+  border-color: var(--brand-purple);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.project-thumb-link { display: flex; }
+
+/* תצוגה חיה מוקטנת: iframe ברוחב מלא שמוקטן פי 4, בלי אינטראקציה */
+.project-thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  background: #ffffff;
+  pointer-events: none;
+}
+
+.thumb-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 400%;
+  height: 400%;
+  border: none;
+  transform: scale(0.25);
+  transform-origin: top left;
+}
+
+.thumb-building,
+.thumb-failed {
+  background: var(--surface-solid);
+  color: var(--muted);
+}
+
+.thumb-failed { color: var(--bad); }
+
+.project-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.project-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  padding-inline-end: 40px;
+}
+
+.project-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.progress-bar.slim { height: 5px; }
+
+.project-card .icon-button {
+  position: absolute;
+  bottom: 14px;
+  inset-inline-end: 12px;
+}
+
+/* ---------- מפת המסע: סיכום ואייקוני פרקים ---------- */
+
+.study-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px var(--pad);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ring svg { position: absolute; inset: 0; }
+
+.ring-fill { transition: stroke-dashoffset 0.6s var(--ease); }
+
+.ring-label {
+  position: relative;
+  font-family: var(--font-brand);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.summary-stats {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+}
+
+.stat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-s);
+}
+
+.stat-value {
+  font-family: var(--font-brand);
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--brand-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.stat-label { color: var(--muted); font-size: 12.5px; }
+
+.chapter-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.chapter-row.done .chapter-icon { color: var(--good); }
+
+.chapter-card .chapter-title { flex: 1; min-width: 0; }
+
+.chapter-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.done-banner {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  color: var(--good);
+}
+
+.done-banner > span { display: flex; flex-direction: column; gap: 4px; color: var(--text); }
+
+/* ---------- פרק: כותרת, סטפר, ניווט ---------- */
+
+.chapter-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chapter-count {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lesson {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.step:last-child { flex: 0; }
+
+.step-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--surface-solid);
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.step.current .step-dot {
+  border-color: var(--brand-purple);
+  color: var(--text);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.step.current { color: var(--text); }
+
+.step.done .step-dot {
+  background: var(--good-soft);
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  margin: 0 6px;
+  background: var(--line);
+}
+
+.step.done .step-line { background: var(--good); opacity: 0.5; }
+
+.chapter-nav {
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.tip {
+  max-width: 460px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  animation: page-in 0.4s var(--ease) both;
+}
+
+.error-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: var(--bad);
+}
+
+@media (max-width: 640px) {
+  .how-steps { flex-direction: column; }
+  .project-card { flex-basis: 100%; }
+  .summary { flex-direction: column; }
+  .summary-stats { width: 100%; }
+  .step-label { display: none; }
+}

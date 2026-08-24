@@ -93,6 +93,40 @@ const he = {
   'title.extraOne': ' ועוד יחידה אחת',
   'title.extraMany': ' ועוד {count} יחידות',
 
+  // בית — איך זה עובד
+  'how.title': 'איך זה עובד',
+  'how.1.title': 'מתארים',
+  'how.1.text': 'כותבים במילים מה רוצים לבנות. משחק, כלי, מה שבא.',
+  'how.2.title': 'המודל בונה',
+  'how.2.text': 'תוך כשתי דקות יש אפליקציה עובדת, רצה כאן במסך.',
+  'how.3.title': 'לומדים את הקוד',
+  'how.3.text': 'פרק-פרק, בשאלות קצרות ובתרגילים. כל תשובה נכונה צוברת XP.',
+  'home.created': 'נוצר {date}',
+  'home.chapters': '{count} פרקים',
+
+  // בנייה
+  'project.elapsed': '{seconds} שניות עברו',
+  'project.tip.1': 'בינתיים: המודל כותב HTML, CSS ו-JavaScript בקובץ אחד.',
+  'project.tip.2': 'כשיסיים, הקוד יתפצל אוטומטית לפרקי למידה.',
+  'project.tip.3': 'הפרק הראשון יהיה תמיד המבנה של העמוד — הכי קל להתחיל ממנו.',
+
+  // מפה
+  'study.summary.points': 'נקודות',
+  'study.summary.firstTry': 'מהניסיון הראשון',
+  'study.summary.left': 'פרקים נותרו',
+  'study.xpReward': '+{xp} XP',
+
+  // פרק
+  'chapter.step.concept': 'עיקרון',
+  'chapter.step.exercise': 'תרגיל',
+  'chapter.step.done': 'סיום',
+  'toast.xp': '+{xp} XP',
+  'toast.xpDetail': 'עוד {left} XP לדרגה הבאה',
+  'toast.rankUp': 'עליתם דרגה!',
+  'toast.rankUpDetail': 'דרגה {level} · {name}',
+  'toast.topRank': 'הדרגה העליונה — כל הכבוד',
+  'toast.downloaded': 'הקובץ ירד',
+
   // שגיאות
   'error.ollamaUnreachable': 'אין תשובה מ-Ollama. כדאי לוודא שהוא רץ ושהמודל מותקן.',
   'error.ollamaHttp': 'Ollama החזיר שגיאה {status}.',
@@ -181,6 +215,36 @@ const en: Record<StringKey, string> = {
   'title.wiringN': 'State and wiring {n}',
   'title.extraOne': ' and one more unit',
   'title.extraMany': ' and {count} more units',
+
+  'how.title': 'How it works',
+  'how.1.title': 'Describe',
+  'how.1.text': 'Write in words what you want to build. A game, a tool, anything.',
+  'how.2.title': 'The model builds',
+  'how.2.text': 'In about two minutes you have a working app, running right here.',
+  'how.3.title': 'Learn the code',
+  'how.3.text': 'Chapter by chapter, with short questions and exercises. Every correct answer earns XP.',
+  'home.created': 'Created {date}',
+  'home.chapters': '{count} chapters',
+
+  'project.elapsed': '{seconds} seconds elapsed',
+  'project.tip.1': 'Meanwhile: the model writes HTML, CSS and JavaScript in a single file.',
+  'project.tip.2': 'When it finishes, the code is split into learning chapters automatically.',
+  'project.tip.3': 'The first chapter is always the page structure — the easiest place to start.',
+
+  'study.summary.points': 'points',
+  'study.summary.firstTry': 'first try',
+  'study.summary.left': 'chapters left',
+  'study.xpReward': '+{xp} XP',
+
+  'chapter.step.concept': 'Idea',
+  'chapter.step.exercise': 'Exercise',
+  'chapter.step.done': 'Done',
+  'toast.xp': '+{xp} XP',
+  'toast.xpDetail': '{left} XP to the next rank',
+  'toast.rankUp': 'Rank up!',
+  'toast.rankUpDetail': 'Rank {level} · {name}',
+  'toast.topRank': 'Top rank — well done',
+  'toast.downloaded': 'File downloaded',
 
   'error.ollamaUnreachable': 'No answer from Ollama. Make sure it is running and the model is installed.',
   'error.ollamaHttp': 'Ollama returned error {status}.',

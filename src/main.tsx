@@ -7,6 +7,7 @@ import { ProjectPage } from './routes/ProjectPage'
 import { StudyPage } from './routes/StudyPage'
 import { ChapterPage } from './routes/ChapterPage'
 import { AppProvider } from './state/AppContext'
+import { ToastProvider } from './components/Toast'
 import './styles/app.css'
 
 const root = document.getElementById('root')
@@ -15,6 +16,7 @@ if (!root) throw new Error('לא נמצא אלמנט root ב-index.html')
 createRoot(root).render(
   <StrictMode>
     <AppProvider>
+      <ToastProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />}>
@@ -25,6 +27,7 @@ createRoot(root).render(
           </Route>
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </AppProvider>
   </StrictMode>,
 )

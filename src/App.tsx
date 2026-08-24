@@ -4,6 +4,7 @@ import { StageBanner } from './components/StageBanner'
 import { useApp } from './state/AppContext'
 import { useT } from './i18n/useT'
 import { LANGUAGES, type Language } from './i18n/strings'
+import { Icon } from './components/Icon'
 import logoMark from './assets/logo-mark.png'
 
 const LANGUAGE_LABELS: Record<Language, string> = { he: 'עברית', en: 'English' }
@@ -58,7 +59,8 @@ export function App() {
         </Link>
 
         <div className="header-side header-end">
-          <label className="language-switch">
+          <label className="language-switch" title={t('settings.language')}>
+            <Icon name="globe" size={16} />
             <span className="language-label">{t('settings.language')}</span>
             <select
               value={state.language}

@@ -5,7 +5,12 @@ import { nextChapterToPrefetch, useProjectActions } from '../state/useProjectAct
 import { BidiText } from '../components/BidiText'
 import { CodeBlock, languageForChapter } from '../components/CodeBlock'
 import { RichText } from '../components/RichText'
+import { Icon } from '../components/Icon'
+import { Stepper } from '../components/Stepper'
+import { useToast } from '../components/Toast'
+import { nextRank, rankForXp, xpForAnswer } from '../state/rank'
 import { useT } from '../i18n/useT'
+import type { StringKey } from '../i18n/strings'
 import { chapterTitleText } from '../i18n/chapterTitle'
 import type { AssembleExercise, Chapter, ChoiceExercise, Project } from '../state/types'
 
@@ -37,11 +42,15 @@ export function ChapterPage() {
   const collapseCode = chapter.lesson?.difficulty === 'intro'
 
   return (
-    <section className="panel">
-      <h2>
-        {t('chapter.heading', { n: index + 1, total: project.chapters.length })} —{' '}
-        <BidiText text={chapterTitleText(language, chapter)} />
-      </h2>
+    <section className="panel page-enter chapter-page">
+      <div className="chapter-head">
+        <span className="chapter-count">
+          {t('chapter.heading', { n: index + 1, total: project.chapters.length })}
+        </span>
+        <h2>
+          <BidiText text={chapterTitleText(language, chapter)} />
+        </h2>
+      </div>
 
       {collapseCode ? (
         <details className="code-details">
@@ -55,15 +64,28 @@ export function ChapterPage() {
       <LessonBlock project={project} chapter={chapter} />
 
       <nav className="chapter-nav">
-        {index > 0 && <Link to={`/project/${project.id}/study/${index}`}>{t('nav.prev')}</Link>}
-        <Link to={`/project/${project.id}/study`}>{t('nav.map')}</Link>
-        {index + 1 < project.chapters.length && (
+        {index > 0 ? (
+          <Link to={`/project/${project.id}/study/${index}`} className="ghost link-button">
+            <Icon name="back" size={14} />
+            {t('nav.prev')}
+          </Link>
+        ) : (
+          <span />
+        )}
+        <Link to={`/project/${project.id}/study`} className="ghost link-button">
+          <Icon name="map" size={14} />
+          {t('nav.map')}
+        </Link>
+        {index + 1 < project.chapters.length ? (
           <Link
             to={`/project/${project.id}/study/${index + 2}`}
-            className={chapter.completed ? 'next-link' : ''}
+            className={chapter.completed ? 'next-link' : 'ghost link-button'}
           >
             {t('nav.next')}
+            <Icon name="forward" size={14} />
           </Link>
+        ) : (
+          <span />
         )}
       </nav>
     </section>
@@ -135,8 +157,13 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
     )
   }
 
+  const steps = [t('chapter.step.concept'), t('chapter.step.exercise'), t('chapter.step.done')]
+  const currentStep = chapter.completed ? 2 : phase === 'concept' ? 0 : 1
+
   if (phase === 'concept') {
     return (
+      <div className="lesson">
+      <Stepper steps={steps} current={currentStep} />
       <div className="concept-card">
         <span className="concept-label">{t('chapter.concept')}</span>
         <p className="concept-text">
@@ -154,14 +181,17 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
         )}
         <button type="button" className="primary" onClick={() => setPhase('exercise')}>
           {t('chapter.toExercise')}
+          <Icon name="forward" size={15} />
         </button>
+      </div>
       </div>
     )
   }
 
   const exercise = chapter.lesson.exercise
   return (
-    <>
+    <div className="lesson">
+      <Stepper steps={steps} current={currentStep} />
       {chapter.completed && (
         <p className="concept-text muted-concept">
           <RichText text={chapter.lesson.concept} />
@@ -178,8 +208,44 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
       ) : (
         <AssembleBlock project={project} chapter={chapter} exercise={exercise} />
       )}
-    </>
+    </div>
   )
+}
+
+/**
+ * רגע ההצלחה חייב להיראות: הודעת XP, ואם עברנו סף — חגיגת דרגה.
+ * מחושב לפני ה-dispatch, מאותם חוקים של ה-reducer.
+ */
+function useCelebrate() {
+  const { state } = useApp()
+  const { t } = useT()
+  const { showToast } = useToast()
+
+  return (chapter: Chapter, attemptsSoFar: number) => {
+    const difficulty = chapter.lesson?.difficulty ?? 'intro'
+    const gained = xpForAnswer(difficulty, attemptsSoFar + 1)
+    const before = rankForXp(state.xp)
+    const afterXp = state.xp + gained
+    const after = rankForXp(afterXp)
+    const next = nextRank(afterXp)
+
+    showToast({
+      title: t('toast.xp', { xp: gained }),
+      detail: next ? t('toast.xpDetail', { left: next.minXp - afterXp }) : t('toast.topRank'),
+      icon: 'bolt',
+    })
+    if (after.level > before.level) {
+      showToast({
+        title: t('toast.rankUp'),
+        detail: t('toast.rankUpDetail', {
+          level: after.level,
+          name: t(`rank.${after.level}` as StringKey),
+        }),
+        icon: 'trophy',
+        tone: 'celebrate',
+      })
+    }
+  }
 }
 
 /** שאלה אמריקאית. פרק שהושלם מוצג נעול עם התשובה הנכונה מסומנת. */
@@ -194,6 +260,7 @@ function ChoiceBlock({
 }) {
   const { answerQuestion } = useProjectActions()
   const { language } = useT()
+  const celebrate = useCelebrate()
   const [choice, setChoice] = useState<number | null>(null)
 
   useEffect(() => setChoice(null), [chapter.id])
@@ -205,7 +272,9 @@ function ChoiceBlock({
   function choose(option: number) {
     if (correct) return
     setChoice(option)
-    answerQuestion(project.id, chapter.id, option === exercise.correctIndex)
+    const isRight = option === exercise.correctIndex
+    if (isRight) celebrate(chapter, chapter.attempts)
+    answerQuestion(project.id, chapter.id, isRight)
   }
 
   return (
@@ -258,6 +327,7 @@ function AssembleBlock({
 }) {
   const { answerQuestion } = useProjectActions()
   const { t } = useT()
+  const celebrate = useCelebrate()
   // המשבצות מזוהות לפי מיקומן המקורי, כדי ששתי משבצות זהות לא יתבלבלו.
   const [placed, setPlaced] = useState<number[]>([])
   const [wrongOnce, setWrongOnce] = useState(false)
@@ -282,6 +352,7 @@ function AssembleBlock({
     // ההשוואה לפי ערכי המשבצות, כך ששתי משבצות זהות מתקבלות בכל סדר ביניהן.
     const assembled = next.map((i) => exercise.tokens[i])
     const correct = assembled.every((token, i) => token === exercise.tokens[i])
+    if (correct) celebrate(chapter, chapter.attempts)
     answerQuestion(project.id, chapter.id, correct)
     if (correct) {
       setSolvedNow(true)
