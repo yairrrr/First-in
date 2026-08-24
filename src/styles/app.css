@@ -24,7 +24,9 @@
   --brand-gradient: linear-gradient(120deg, var(--brand-purple), #5f8bfd 55%, var(--brand-cyan));
   --accent: #8f9bfd;
   --accent-soft: rgba(143, 155, 253, 0.14);
-  --glow: rgba(122, 108, 250, 0.35);
+  --glow: rgba(122, 108, 250, 0.22);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.35);
 
   /* משוב */
   --good: #4ade80;
@@ -33,8 +35,8 @@
   --bad-soft: rgba(248, 113, 113, 0.1);
 
   /* מידות ותנועה */
-  --radius: 16px;
-  --radius-s: 10px;
+  --radius: 12px;
+  --radius-s: 8px;
   --pad: 22px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -70,12 +72,7 @@ body {
 }
 
 .blob {
-  position: absolute;
-  width: 46vw;
-  height: 46vw;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.13;
+  display: none;
 }
 
 .blob-purple {
@@ -119,8 +116,7 @@ body {
   gap: 18px;
   padding: 12px 28px;
   border-bottom: 1px solid var(--line);
-  background: rgba(10, 10, 18, 0.72);
-  backdrop-filter: blur(14px);
+  background: var(--bg-base);
 }
 
 /* שני צדדים שווי משקל, כדי שהמרכז יהיה מרכז אמיתי */
@@ -142,8 +138,7 @@ body {
 .logo-img {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  box-shadow: 0 0 20px var(--glow);
+  border-radius: 10px;
 }
 
 .brand-center {
@@ -185,7 +180,6 @@ body {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
-  box-shadow: 0 0 22px rgba(122, 108, 250, 0.18);
 }
 
 .rank-level {
@@ -200,7 +194,6 @@ body {
   font-family: var(--font-latin);
   font-size: 14px;
   font-weight: 700;
-  box-shadow: 0 0 12px var(--glow);
 }
 
 .rank-body {
@@ -290,10 +283,9 @@ a {
 .concept-card,
 .waiting,
 .done-banner {
-  background: var(--surface);
+  background: var(--surface-solid);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  backdrop-filter: blur(10px);
 }
 
 /* ---------- מסך הבית ---------- */
@@ -307,10 +299,9 @@ a {
 }
 
 .hero-logo {
-  width: 88px;
-  height: 88px;
-  border-radius: 22px;
-  box-shadow: 0 0 44px var(--glow);
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
 }
 
 .hero-name {
@@ -339,6 +330,10 @@ a {
   margin-top: 10px;
   font-size: 26px;
   align-self: flex-start;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  color: var(--text);
 }
 
 .build-form {
@@ -384,13 +379,12 @@ a {
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 24px var(--glow);
-  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), opacity 0.18s;
+  box-shadow: var(--shadow-1);
+  transition: filter 0.15s, opacity 0.15s, transform 0.12s;
 }
 
 .primary:hover:enabled {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 32px rgba(122, 108, 250, 0.5);
+  filter: brightness(1.08);
 }
 
 .primary:active:enabled {
@@ -437,8 +431,7 @@ a {
 }
 
 .project-row:hover {
-  border-color: var(--brand-purple);
-  transform: translateY(-1px);
+  border-color: var(--accent);
 }
 
 .project-row > a {
@@ -503,7 +496,6 @@ a {
   margin-bottom: 8px;
   background: var(--brand-gradient);
   border-radius: 50%;
-  box-shadow: 0 0 34px var(--glow);
   animation: breathe 1.9s var(--ease) infinite;
 }
 
@@ -543,13 +535,11 @@ a {
   color: var(--text);
   text-decoration: none;
   font-weight: 700;
-  box-shadow: 0 0 24px rgba(122, 108, 250, 0.15);
-  transition: box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+  transition: border-color 0.2s var(--ease);
 }
 
 .study-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 34px rgba(122, 108, 250, 0.3);
+  border-color: var(--accent);
 }
 
 .study-cta .meta { color: var(--accent); }
@@ -597,7 +587,6 @@ a {
 .progress-fill {
   background: var(--brand-gradient);
   border-radius: 5px;
-  box-shadow: 0 0 12px var(--glow);
   transition: width 0.5s var(--ease);
 }
 
@@ -660,8 +649,7 @@ a {
 }
 
 .chapter-card:hover {
-  border-color: var(--brand-purple);
-  transform: translateY(-1px);
+  border-color: var(--accent);
 }
 
 .chapter-title { font-weight: 600; }
@@ -680,7 +668,7 @@ a {
     linear-gradient(var(--surface-solid), var(--surface-solid)) padding-box,
     var(--brand-gradient) border-box;
   color: var(--text);
-  animation: ring 2.2s var(--ease) infinite;
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 .chapter-row.next .chapter-card {
@@ -969,7 +957,7 @@ a {
   color: #08080e;
   font-weight: 800;
   text-decoration: none;
-  box-shadow: 0 4px 20px var(--glow);
+  box-shadow: var(--shadow-1);
 }
 
 /* ---------- מסכים צרים ---------- */
@@ -1062,7 +1050,7 @@ a {
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 3px 16px var(--glow);
+  box-shadow: var(--shadow-1);
 }
 
 .preview {
@@ -1147,11 +1135,11 @@ a {
 }
 
 .page-enter {
-  animation: page-in 0.32s var(--ease) both;
+  animation: page-in 0.22s ease-out both;
 }
 
 @keyframes page-in {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -1257,9 +1245,9 @@ a {
   border: 1px solid var(--line);
   border-radius: var(--radius-s);
   color: var(--text);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(12px);
-  animation: toast-in 0.35s var(--ease) both;
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-2);
+  animation: toast-in 0.3s var(--ease) both;
 }
 
 .toast .icon { color: #ffb86c; }
@@ -1269,7 +1257,7 @@ a {
   background:
     linear-gradient(rgba(18, 18, 28, 0.94), rgba(18, 18, 28, 0.94)) padding-box,
     var(--brand-gradient) border-box;
-  box-shadow: 0 10px 34px var(--glow);
+  box-shadow: var(--shadow-2);
 }
 
 .toast-celebrate .icon { color: var(--brand-cyan); }
@@ -1367,13 +1355,11 @@ a {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  transition: border-color 0.2s var(--ease);
 }
 
 .project-card:hover {
-  border-color: var(--brand-purple);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  border-color: var(--accent);
 }
 
 .project-thumb-link { display: flex; }
@@ -1502,10 +1488,7 @@ a {
   font-size: 24px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: var(--brand-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+  color: var(--text);
 }
 
 .stat-label { color: var(--muted); font-size: 12.5px; }
@@ -1646,4 +1629,72 @@ a {
   .summary { flex-direction: column; }
   .summary-stats { width: 100%; }
   .step-label { display: none; }
+}
+
+/* =====================================================================
+   ליטוש: יעדי מגע, היררכיה, מובייל — ללא שינוי מבנה
+   ===================================================================== */
+
+/* יעדי מגע: 40px לפחות לכל פעולה */
+.icon-button { width: 40px; height: 40px; }
+.tile { min-height: 44px; }
+.option { min-height: 48px; }
+.ghost, .link-button { min-height: 38px; }
+.language-switch select { min-height: 38px; }
+.brand-center { padding: 4px 8px; min-height: 40px; justify-content: center; }
+.project-card-title { display: block; padding: 6px 0; min-height: 36px; }
+.chapter-card { min-height: 64px; }
+
+/* לחיצה: משוב קטן ומיידי, בלי הזזות ריחוף */
+.ghost:active, .link-button:active { transform: scale(0.98); }
+.primary:active:enabled { transform: scale(0.98); }
+
+/* שדות טקסט: 16px במובייל מונע זום אוטומטי ב-iOS */
+.prompt-input { font-size: 16px; line-height: 1.55; }
+.prompt-input::placeholder { color: rgba(155, 155, 176, 0.7); }
+
+/* --- מובייל: כותרת בשתי שורות מסודרות --- */
+@media (max-width: 640px) {
+  .header { gap: 8px 12px; padding: 10px 14px; }
+  /* הצד הימני מתפרק לילדים ישירים, כדי לסדר: לוגו | שם | שפה, ומתחת הדרגה */
+  .header-side:first-child { display: contents; }
+  .logo-link { order: 1; }
+  .brand-center { order: 2; flex: 1; min-height: 40px; }
+  .header-end { order: 3; flex: 0; }
+  .stage-banner { order: 4; flex-basis: 100%; justify-content: space-between; }
+  .rank-body { flex: 1; }
+  .logo-img { width: 38px; height: 38px; }
+  .brand-name { font-size: 17px; letter-spacing: 1.5px; }
+  .language-label { display: none; }
+
+  /* הבמה: שורת הכלים נשברת, ה-CTA לרוחב מלא — בלי גלילה אופקית */
+  .stage { margin: -24px -14px -56px; width: calc(100% + 28px); }
+  .stage-bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 10px 14px; }
+  .stage-title { white-space: normal; font-size: 15px; }
+  .stage-tools { flex-wrap: wrap; }
+  .stage-tools .ghost { flex: 1; justify-content: center; }
+  .stage-cta { flex-basis: 100%; justify-content: center; }
+
+  /* הבית: הבלוק העליון קטן יותר, הכותרת כבר בראש הדף */
+  .hero { padding: 12px 0 0; gap: 6px; }
+  .hero-logo { width: 56px; height: 56px; border-radius: 14px; }
+  .hero-name { font-size: 26px; letter-spacing: 3px; }
+  .hero-slogan { font-size: 13.5px; letter-spacing: 1px; text-align: center; }
+  .build-actions { flex-direction: column; align-items: stretch; }
+  .build-actions .primary { justify-content: center; }
+
+  /* מפה ופרק */
+  .study-head { flex-direction: column; align-items: flex-start; }
+  .chapter-side { flex-direction: column; align-items: flex-end; gap: 4px; }
+  .chapter-nav { flex-wrap: wrap; gap: 10px; }
+  .toasts { inset-inline: 14px; bottom: 14px; }
+  .toast { min-width: 0; }
+}
+
+/* --- טאבלט: כרטיס לרוחב, ריווח מתון --- */
+@media (min-width: 641px) and (max-width: 900px) {
+  .main { padding: 28px 20px 56px; }
+  .project-card { flex-basis: 100%; }
+  /* הבמה מבטלת בדיוק את הריווח של .main בטאבלט, כדי שלא תגלוש */
+  .stage { margin: -28px -20px -56px; width: calc(100% + 40px); }
 }
