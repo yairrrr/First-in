@@ -197,9 +197,9 @@ body {
   background: var(--brand-gradient);
   border-radius: 50%;
   color: #08080e;
-  font-family: var(--font-brand);
-  font-size: 13px;
-  font-weight: 800;
+  font-family: var(--font-latin);
+  font-size: 14px;
+  font-weight: 700;
   box-shadow: 0 0 12px var(--glow);
 }
 
@@ -1340,7 +1340,7 @@ a {
   position: absolute;
   top: 14px;
   inset-inline-end: 16px;
-  font-family: var(--font-brand);
+  font-family: var(--font-latin);
   font-size: 22px;
   color: rgba(255, 255, 255, 0.12);
 }
@@ -1475,9 +1475,10 @@ a {
 
 .ring-label {
   position: relative;
-  font-family: var(--font-brand);
-  font-size: 15px;
+  font-family: var(--font-latin);
+  font-size: 17px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .summary-stats {
@@ -1497,9 +1498,10 @@ a {
 }
 
 .stat-value {
-  font-family: var(--font-brand);
-  font-size: 20px;
+  font-family: var(--font-latin);
+  font-size: 24px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   background: var(--brand-gradient);
   background-clip: text;
   -webkit-background-clip: text;
