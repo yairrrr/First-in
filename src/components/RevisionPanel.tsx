@@ -6,6 +6,9 @@ import { Icon } from './Icon'
 import { useToast } from './Toast'
 import type { Project } from '../state/types'
 
+/** Upper bound for one instruction. */
+export const INSTRUCTION_MAX_CHARS = 1000
+
 /**
  * Revision panel: free-text instructions are applied to the built project by the
  * model. History is shown as a thread, with undo, since a full-file rewrite can
@@ -19,8 +22,9 @@ export function RevisionPanel({ project }: { project: Project }) {
   const listRef = useRef<HTMLDivElement>(null)
 
   const working = project.revisions.some((r) => r.status === 'working')
-  const version = project.previousVersions.length + 1
   const appliedCount = project.revisions.filter((r) => r.status === 'applied').length
+  // Applied revisions still in effect; the undo stack is capped, so it cannot be used here.
+  const version = appliedCount + 1
 
   // Keep the latest entry in view when the thread grows or a status changes
   useEffect(() => {
@@ -83,6 +87,12 @@ export function RevisionPanel({ project }: { project: Project }) {
                   {storedMessage(language, revision.message) ?? t('revise.failed')}
                 </>
               )}
+              {revision.status === 'reverted' && (
+                <>
+                  <Icon name="refresh" size={13} />
+                  {t('revise.reverted')}
+                </>
+              )}
             </span>
           </div>
         ))}
@@ -95,6 +105,7 @@ export function RevisionPanel({ project }: { project: Project }) {
           onChange={(event) => setDraft(event.target.value)}
           placeholder={t('revise.placeholder')}
           rows={2}
+          maxLength={INSTRUCTION_MAX_CHARS}
           disabled={working}
           onKeyDown={(event) => {
             // Enter submits, Shift+Enter inserts a newline

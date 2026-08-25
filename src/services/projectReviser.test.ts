@@ -45,6 +45,15 @@ describe('reviseProject', () => {
   })
 })
 
+describe('reviseProject output validation', () => {
+  it('rejects a rewrite that yields no chapters (QA-007)', async () => {
+    const { provider } = providerReturning('<!DOCTYPE html><html><head></head><body></body></html>')
+    await expect(reviseProject(provider, '<html><body>x</body></html>', 'remove everything')).rejects.toMatchObject({
+      code: 'emptyOutput',
+    })
+  })
+})
+
 describe('buildRevisePrompt', () => {
   it('places the instruction before the code, separated by the marker', () => {
     const prompt = buildRevisePrompt('<html></html>', 'x')

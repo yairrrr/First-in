@@ -93,7 +93,13 @@ export function useProjectActions() {
           difficulty,
           kind: exerciseKindFor(difficulty, chapterIndex),
         })
-        dispatch({ type: 'LESSON_LOADED', projectId: project.id, chapterId: chapter.id, lesson })
+        dispatch({
+          type: 'LESSON_LOADED',
+          projectId: project.id,
+          chapterId: chapter.id,
+          code: chapter.code,
+          lesson,
+        })
         return null
       } catch (error) {
         return errorMessage(language, error)

@@ -1745,3 +1745,20 @@ a {
     border-bottom: 1px solid var(--line);
   }
 }
+
+/* ---------- Persistence warning ---------- */
+
+.storage-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 28px;
+  background: var(--bad-soft);
+  border-bottom: 1px solid var(--bad);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.storage-warning .icon { color: var(--bad); }
+
+.revision-reverted { opacity: 0.7; }

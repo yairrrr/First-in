@@ -11,6 +11,9 @@ export const initialState: AppState = { projects: [], xp: 0, language: 'he' }
  */
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case 'STATE_HYDRATED':
+      return action.state
+
     case 'PROJECT_CREATED':
       return { ...state, projects: [action.project, ...state.projects] }
 
@@ -55,12 +58,23 @@ export function reducer(state: AppState, action: Action): AppState {
       return updateProject(state, action.projectId, (project) => {
         const previous = project.previousVersions[project.previousVersions.length - 1]
         if (previous === undefined) return project
+        // The most recent applied revision is the one being undone; keep it in the
+        // history as 'reverted' so the thread stays truthful.
+        let undone = false
+        const revisions = [...project.revisions].reverse().map((r) => {
+          if (!undone && r.status === 'applied') {
+            undone = true
+            return { ...r, status: 'reverted' as const }
+          }
+          return r
+        }).reverse()
         return {
           ...project,
           code: previous.code,
           // Chapters come back from the snapshot; completions made since are not lost.
           chapters: restoreChapters(project.chapters, previous.chapters),
           previousVersions: project.previousVersions.slice(0, -1),
+          revisions,
         }
       })
 
@@ -92,12 +106,17 @@ export function reducer(state: AppState, action: Action): AppState {
       }))
 
     case 'LESSON_LOADED':
-      return updateProject(state, action.projectId, (project) => ({
-        ...project,
-        chapters: project.chapters.map((c) =>
-          c.id === action.chapterId ? { ...c, lesson: action.lesson } : c,
-        ),
-      }))
+      return updateProject(state, action.projectId, (project) => {
+        // Chapter ids are positional. If a revision replaced the chapters while the
+        // lesson was generating, the id may now point at different code; a lesson
+        // for stale code must not be attached to it.
+        const target = project.chapters.find((c) => c.id === action.chapterId && c.code === action.code)
+        if (!target) return project
+        return {
+          ...project,
+          chapters: project.chapters.map((c) => (c === target ? { ...c, lesson: action.lesson } : c)),
+        }
+      })
 
     case 'CHAPTER_ANSWERED': {
       const withProject = updateProject(state, action.projectId, (project) => {

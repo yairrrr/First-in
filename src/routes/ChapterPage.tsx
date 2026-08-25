@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { nextChapterToPrefetch, useProjectActions } from '../state/useProjectActions'
@@ -339,12 +339,20 @@ function AssembleBlock({
 
   const locked = chapter.completed
   const shuffled = useMemo(() => shuffleIndexes(exercise.tokens), [exercise.tokens])
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setPlaced([])
     setWrongOnce(false)
     setSolvedNow(false)
   }, [chapter.id])
+
+  useEffect(
+    () => () => {
+      if (resetTimer.current) clearTimeout(resetTimer.current)
+    },
+    [],
+  )
 
   function place(tokenIndex: number) {
     if (locked || placed.includes(tokenIndex)) return
@@ -361,7 +369,7 @@ function AssembleBlock({
       setSolvedNow(true)
     } else {
       setWrongOnce(true)
-      setTimeout(() => setPlaced([]), 700)
+      resetTimer.current = setTimeout(() => setPlaced([]), 700)
     }
   }
 

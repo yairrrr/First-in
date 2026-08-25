@@ -11,7 +11,7 @@ const LANGUAGE_LABELS: Record<Language, string> = { he: 'עברית', en: 'Engli
 
 /** Application shell: header and the routed screen. */
 export function App() {
-  const { state, dispatch } = useApp()
+  const { state, dispatch, storageFailed } = useApp()
   const { t, language } = useT()
   const headerRef = useRef<HTMLElement>(null)
 
@@ -71,6 +71,13 @@ export function App() {
           </label>
         </div>
       </header>
+
+      {storageFailed && (
+        <div className="storage-warning" role="alert">
+          <Icon name="alert" size={16} />
+          {t('storage.failed')}
+        </div>
+      )}
 
       <main className="main">
         <Outlet />

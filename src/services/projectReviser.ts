@@ -1,6 +1,5 @@
 import type { LlmProvider } from '../llm/types'
-import { stripCodeFence } from './stripCodeFence'
-import { BuildError, looksLikeHtml } from './projectBuilder'
+import { BuildError, acceptGeneratedHtml } from './projectBuilder'
 
 /**
  * projectReviser: current code plus a free-text instruction in, updated code out.
@@ -37,7 +36,5 @@ export async function reviseProject(
     prompt: buildRevisePrompt(code, trimmed),
   })
 
-  const html = stripCodeFence(text)
-  if (!looksLikeHtml(html)) throw new BuildError('notHtml')
-  return html
+  return acceptGeneratedHtml(text)
 }

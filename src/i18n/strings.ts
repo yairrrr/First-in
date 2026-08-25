@@ -146,6 +146,10 @@ const he = {
 
   // Errors
   'error.ollamaUnreachable': 'אין תשובה מ-Ollama. כדאי לוודא שהוא רץ ושהמודל מותקן.',
+  'error.ollamaTimeout': 'המודל לא ענה בזמן סביר. כדאי לנסות שוב, או בקשה קצרה יותר.',
+  'error.emptyOutput': 'המודל החזיר דף ריק. כדאי לנסח את הבקשה מחדש.',
+  'storage.failed': 'לא הצלחנו לשמור את ההתקדמות בדפדפן (האחסון מלא). מחיקת פרויקטים ישנים תפנה מקום.',
+  'revise.reverted': 'בוטל',
   'error.ollamaHttp': 'Ollama החזיר שגיאה {status}.',
   'error.ollamaFormat': 'התשובה מ-Ollama אינה בפורמט המצופה.',
   'error.emptyPrompt': 'הפרומפט ריק.',
@@ -279,6 +283,10 @@ const en: Record<StringKey, string> = {
   'toast.reverted': 'Back to the previous version',
 
   'error.ollamaUnreachable': 'No answer from Ollama. Make sure it is running and the model is installed.',
+  'error.ollamaTimeout': 'The model did not answer in a reasonable time. Try again, or a shorter request.',
+  'error.emptyOutput': 'The model returned an empty page. Try rephrasing the request.',
+  'storage.failed': 'Progress could not be saved in this browser (storage is full). Deleting old projects frees space.',
+  'revise.reverted': 'Undone',
   'error.ollamaHttp': 'Ollama returned error {status}.',
   'error.ollamaFormat': 'The answer from Ollama is not in the expected format.',
   'error.emptyPrompt': 'The prompt is empty.',

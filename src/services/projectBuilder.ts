@@ -1,5 +1,6 @@
 import type { LlmProvider } from '../llm/types'
 import { stripCodeFence } from './stripCodeFence'
+import { splitCode } from './codeSplitter'
 
 /**
  * projectBuilder: the user's prompt in, a complete HTML file out.
@@ -16,7 +17,7 @@ export const BUILD_SYSTEM_PROMPT = [
   'Do not write explanations, comments about your process, or markdown fences.',
 ].join(' ')
 
-export type BuildErrorCode = 'emptyPrompt' | 'notHtml'
+export type BuildErrorCode = 'emptyPrompt' | 'notHtml' | 'emptyOutput'
 
 /** Thrown on empty input or when the model returns something that is not an HTML document. */
 export class BuildError extends Error {
@@ -38,11 +39,18 @@ export async function buildProject(provider: LlmProvider, prompt: string): Promi
     prompt: trimmed,
   })
 
-  const html = stripCodeFence(text)
-  if (!looksLikeHtml(html)) {
-    throw new BuildError('notHtml')
-  }
+  return acceptGeneratedHtml(text)
+}
 
+/**
+ * Validates model output before it reaches the preview: it must be an HTML
+ * document, and it must contain something to learn from. A bare document with
+ * no body, styles or scripts would render blank and produce an empty study map.
+ */
+export function acceptGeneratedHtml(text: string): string {
+  const html = stripCodeFence(text)
+  if (!looksLikeHtml(html)) throw new BuildError('notHtml')
+  if (splitCode(html).length === 0) throw new BuildError('emptyOutput')
   return html
 }
 

@@ -1,11 +1,13 @@
-import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from 'react'
 import { reducer } from './reducer'
-import { loadState, saveState } from './persistence'
+import { STORAGE_KEY, loadState, saveState } from './persistence'
 import type { Action, AppState } from './types'
 
 interface AppContextValue {
   state: AppState
   dispatch: (action: Action) => void
+  /** True when the last persistence write failed (for example, storage quota exceeded). */
+  storageFailed: boolean
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -18,12 +20,24 @@ function browserStorage() {
 export function AppProvider({ children }: { children: ReactNode }) {
   // Lazy initializer: stored state is read once, not on every render.
   const [state, dispatch] = useReducer(reducer, undefined, () => loadState(browserStorage()))
+  const [storageFailed, setStorageFailed] = useState(false)
 
   useEffect(() => {
-    saveState(browserStorage(), state)
+    setStorageFailed(!saveState(browserStorage(), state))
   }, [state])
 
-  return <AppContext value={{ state, dispatch }}>{children}</AppContext>
+  // Another tab wrote newer state. Adopt it, otherwise this tab's next write would
+  // overwrite the other tab's progress with a stale copy.
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || event.storageArea !== browserStorage()) return
+      dispatch({ type: 'STATE_HYDRATED', state: loadState(browserStorage()) })
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  return <AppContext value={{ state, dispatch, storageFailed }}>{children}</AppContext>
 }
 
 export function useApp(): AppContextValue {

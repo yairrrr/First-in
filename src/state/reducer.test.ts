@@ -85,7 +85,7 @@ describe('reducer', () => {
         correctIndex: 2,
       },
     }
-    const next = reducer(buildReadyProject(), { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
+    const next = reducer(buildReadyProject(), { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', code: '<div></div>', lesson })
     expect(next.projects[0].chapters[0].lesson).toEqual(lesson)
     expect(next.projects[0].chapters[1].lesson).toBeNull()
   })
@@ -182,7 +182,7 @@ describe('global XP', () => {
   }
 
   function readyWithLesson() {
-    return reducer(buildReadyProject(), { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
+    return reducer(buildReadyProject(), { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', code: '<div></div>', lesson })
   }
 
   it('adds difficulty-based XP plus the first-try bonus', () => {

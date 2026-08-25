@@ -76,17 +76,19 @@ describe('saveState / loadState', () => {
     expect(loaded.error).toBe('interrupted')
   })
 
-  it('tolerates storage that throws on read or write', () => {
+  it('tolerates storage that throws on read or write, and reports the failed write', () => {
     const blocked: StateStorage = {
       getItem() {
         throw new Error('blocked')
       },
       setItem() {
-        throw new Error('blocked')
+        throw new Error('QuotaExceededError')
       },
     }
     expect(loadState(blocked)).toEqual(empty)
-    expect(() => saveState(blocked, empty)).not.toThrow()
+    expect(saveState(blocked, empty)).toBe(false)
+    expect(saveState(fakeStorage(), empty)).toBe(true)
+    expect(saveState(undefined, empty)).toBe(true)
   })
 })
 
@@ -189,6 +191,8 @@ describe('revisions and stored versions', () => {
     }
     const loaded = loadState(fakeStorage(JSON.stringify({ projects: [stored] }))).projects[0]
     expect(loaded.revisions.map((r) => r.status)).toEqual(['applied', 'failed'])
+    const reverted = { ...stored, revisions: [{ id: 'r3', instruction: 'x', status: 'reverted', message: null, createdAt: '' }] }
+    expect(loadState(fakeStorage(JSON.stringify({ projects: [reverted] }))).projects[0].revisions[0].status).toBe('reverted')
     expect(loaded.revisions[1].message).toBe('interrupted')
     expect(loaded.previousVersions[0].code).toBe('<html>v1</html>')
     expect(loaded.previousVersions[0].chapters[0].completed).toBe(true)

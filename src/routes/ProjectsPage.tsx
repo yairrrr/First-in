@@ -8,6 +8,9 @@ import { Icon } from '../components/Icon'
 import type { Project } from '../state/types'
 import logoMark from '../assets/logo-mark.png'
 
+/** Upper bound for a build prompt; longer prompts only degrade model output. */
+export const PROMPT_MAX_CHARS = 2000
+
 /** Home: the build form and the project list. */
 export function ProjectsPage() {
   const { state } = useApp()
@@ -46,6 +49,7 @@ export function ProjectsPage() {
           onChange={(event) => setPrompt(event.target.value)}
           placeholder={t('home.placeholder')}
           rows={4}
+          maxLength={PROMPT_MAX_CHARS}
         />
 
         <div className="build-actions">
@@ -102,14 +106,11 @@ export function ProjectsPage() {
                         {t('home.chapters', { count: project.chapters.length })}
                       </span>
                     )}
-                    <span className="meta">
-                      {t('home.created', {
-                        date: new Date(project.createdAt).toLocaleDateString(
-                          language === 'he' ? 'he-IL' : 'en-US',
-                          { day: 'numeric', month: 'short' },
-                        ),
-                      })}
-                    </span>
+                    {formatCreated(project.createdAt, language) && (
+                      <span className="meta">
+                        {t('home.created', { date: formatCreated(project.createdAt, language) })}
+                      </span>
+                    )}
                   </div>
                   {project.status === 'ready' && (
                     <div className="progress-bar slim">
@@ -141,6 +142,13 @@ export function ProjectsPage() {
   )
 }
 
+/** Stored timestamps may be missing or invalid; in that case the date is simply not shown. */
+function formatCreated(iso: string, language: 'he' | 'en'): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString(language === 'he' ? 'he-IL' : 'en-US', { day: 'numeric', month: 'short' })
+}
+
 /** Thumbnails only need markup and styles; scripts are stripped so the sandbox does not log blocked executions. */
 function staticSnapshot(code: string): string {
   return code.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -162,6 +170,7 @@ function ProjectThumb({ project }: { project: Project }) {
         title=""
         srcDoc={staticSnapshot(project.code)}
         sandbox=""
+        loading="lazy"
         tabIndex={-1}
         aria-hidden="true"
       />

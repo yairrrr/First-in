@@ -9,11 +9,17 @@ import { translate, type Language } from './strings'
 export function errorMessage(language: Language, error: unknown): string {
   if (error instanceof OllamaError) {
     if (error.code === 'unreachable') return translate(language, 'error.ollamaUnreachable')
-    if (error.code === 'http') return translate(language, 'error.ollamaHttp', { status: error.status ?? '?' })
+    if (error.code === 'timeout') return translate(language, 'error.ollamaTimeout')
+    if (error.code === 'http') {
+      const base = translate(language, 'error.ollamaHttp', { status: error.status ?? '?' })
+      return error.detail ? `${base} ${error.detail}` : base
+    }
     return translate(language, 'error.ollamaFormat')
   }
   if (error instanceof BuildError) {
-    return translate(language, error.code === 'emptyPrompt' ? 'error.emptyPrompt' : 'error.notHtml')
+    if (error.code === 'emptyPrompt') return translate(language, 'error.emptyPrompt')
+    if (error.code === 'emptyOutput') return translate(language, 'error.emptyOutput')
+    return translate(language, 'error.notHtml')
   }
   if (error instanceof Error && error.message) return error.message
   return translate(language, 'error.unknown')

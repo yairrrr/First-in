@@ -83,8 +83,10 @@ export function ProjectPage() {
             className="preview"
             title={project.prompt}
             srcDoc={project.code}
-            // Model-generated code runs sandboxed, without access to the host page.
-            sandbox="allow-scripts"
+            // Model-generated code runs sandboxed: scripts, dialogs and forms are allowed
+            // inside the frame, but it gets no same-origin access, no top navigation
+            // and no popups, so it cannot reach the host page or its storage.
+            sandbox="allow-scripts allow-modals allow-forms"
           />
         </div>
       </section>

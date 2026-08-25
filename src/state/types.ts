@@ -68,7 +68,7 @@ export interface Chapter {
   attempts: number
 }
 
-export type RevisionStatus = 'working' | 'applied' | 'failed'
+export type RevisionStatus = 'working' | 'applied' | 'failed' | 'reverted'
 
 /**
  * One instruction in the conversation about a built project ("make the buttons bigger").
@@ -134,5 +134,8 @@ export type Action =
   | { type: 'REVISION_SUCCEEDED'; projectId: string; revisionId: string; code: string; chapters: Chapter[] }
   | { type: 'REVISION_FAILED'; projectId: string; revisionId: string; message: string }
   | { type: 'REVISION_REVERTED'; projectId: string }
-  | { type: 'LESSON_LOADED'; projectId: string; chapterId: string; lesson: Lesson }
+  /** `code` is the chapter code the lesson was generated for; a mismatch means the chapter changed meanwhile. */
+  | { type: 'LESSON_LOADED'; projectId: string; chapterId: string; code: string; lesson: Lesson }
+  /** Replaces the whole state with a version another tab persisted. */
+  | { type: 'STATE_HYDRATED'; state: AppState }
   | { type: 'CHAPTER_ANSWERED'; projectId: string; chapterId: string; correct: boolean }

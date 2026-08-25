@@ -49,6 +49,8 @@ export function StudyPage() {
   const percent = progressPercent(project)
   const { firstTry, completed } = firstTryStats(project)
   const left = project.chapters.length - completed
+  // Completion is decided by count: a rounded percentage can reach 100 with a chapter left.
+  const allDone = project.chapters.length > 0 && left === 0
   // The next station: the first chapter not yet completed.
   const nextIndex = project.chapters.findIndex((chapter) => !chapter.completed)
   // XP an open chapter yields for a first-try answer at the current rank.
@@ -64,7 +66,7 @@ export function StudyPage() {
         </Link>
       </div>
 
-      {percent === 100 && (
+      {allDone && (
         <div className="done-banner">
           <Icon name="trophy" size={28} />
           <span>

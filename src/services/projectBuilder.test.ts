@@ -45,6 +45,11 @@ describe('buildProject', () => {
     expect(seen).toHaveLength(0)
   })
 
+  it('rejects a document that yields no chapters (QA-007)', async () => {
+    const { provider } = providerReturning('<!DOCTYPE html><html><head></head><body></body></html>')
+    await expect(buildProject(provider, 'build')).rejects.toMatchObject({ code: 'emptyOutput' })
+  })
+
   it('works end to end with the recorded provider', async () => {
     const html = await buildProject(createFixtureProvider(), 'memory game')
     expect(html).toContain('<script>')

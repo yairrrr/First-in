@@ -48,12 +48,14 @@ export function loadState(storage: StateStorage | undefined): AppState {
   }
 }
 
-export function saveState(storage: StateStorage | undefined, state: AppState): void {
-  if (!storage) return
+/** Returns false when the write failed (typically quota exceeded), so the UI can warn. */
+export function saveState(storage: StateStorage | undefined, state: AppState): boolean {
+  if (!storage) return true
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(state))
+    return true
   } catch {
-    // Quota exceeded. The session keeps working; it just will not survive a reload.
+    return false
   }
 }
 
@@ -117,7 +119,8 @@ function toVersion(candidate: unknown): ProjectVersion[] {
 function toRevision(candidate: unknown): Revision[] {
   if (!isRecord(candidate)) return []
   if (typeof candidate.id !== 'string' || typeof candidate.instruction !== 'string') return []
-  const status = candidate.status === 'applied' ? 'applied' : 'failed'
+  const status =
+    candidate.status === 'applied' || candidate.status === 'reverted' ? candidate.status : 'failed'
   return [
     {
       id: candidate.id,
