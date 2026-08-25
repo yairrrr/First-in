@@ -3,11 +3,10 @@ import { stripCodeFence } from './stripCodeFence'
 import { BuildError, looksLikeHtml } from './projectBuilder'
 
 /**
- * projectReviser — הקוד הנוכחי והערה של המשתמש נכנסים, קוד מעודכן יוצא.
+ * projectReviser: current code plus a free-text instruction in, updated code out.
  *
- * זו "השיחה על הפרויקט": המשתמש מגיב על מה שיצא, כמו שמגיבים למפתח,
- * והמודל משכתב את הקובץ כולו. קובץ שלם ולא diff — כי קובץ HTML יחיד
- * הוא היחידה שכל שאר המערכת (תצוגה, פיצול לפרקים) יודעת לעבוד איתה.
+ * The model returns the whole file rather than a diff: a single HTML file is
+ * the unit the preview and the chapter splitter operate on.
  */
 
 export const REVISE_SYSTEM_PROMPT = [
@@ -18,7 +17,7 @@ export const REVISE_SYSTEM_PROMPT = [
   'Do not write explanations, notes, or markdown fences. Output only the file.',
 ].join(' ')
 
-/** סימן שהספק השמור מזהה, כדי להבדיל בקשת שינוי מבקשת בנייה. */
+/** Marker the recorded provider uses to tell a revision request from a build request. */
 export const REVISE_MARKER = 'The current file:'
 
 export function buildRevisePrompt(code: string, instruction: string): string {

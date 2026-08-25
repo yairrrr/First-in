@@ -3,20 +3,21 @@ import { Link, useParams } from 'react-router-dom'
 import { useApp } from '../state/AppContext'
 import { useProjectActions } from '../state/useProjectActions'
 import { useT } from '../i18n/useT'
+import { storedMessage } from '../i18n/errorMessage'
 import { Icon } from '../components/Icon'
 import { RevisionPanel } from '../components/RevisionPanel'
 import { useToast } from '../components/Toast'
 import type { Project } from '../state/types'
 
 /**
- * Your Project — המשתמש מקבל מוצר עובד ורואה אותו רץ. אין כאן למידה.
- * מסך ההמתנה פשוט בכוונה, ראה ADR-004: שעון ועצות, בלי שלבים מזויפים.
+ * Project screen: the built app running in an isolated iframe, with tools and
+ * the revision panel. Learning happens elsewhere.
  */
 export function ProjectPage() {
   const { id } = useParams()
   const { state } = useApp()
   const { retryBuild } = useProjectActions()
-  const { t } = useT()
+  const { t, language } = useT()
   const { showToast } = useToast()
   const previewRef = useRef<HTMLIFrameElement>(null)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -31,12 +32,12 @@ export function ProjectPage() {
     )
   }
 
-  // פרויקט מוכן מקבל את כל המסך: שורת כלים דקה, ומתחתיה התוצר ממלא את השאר.
+  // A ready project takes the whole viewport: a slim toolbar, then the preview.
   if (project.status === 'ready') {
     return (
       <section className="stage page-enter">
         <div className="stage-bar">
-          {/* הפרומפט הוא טקסט של המשתמש, ויכול להיות בכל שפה. dir="auto" מונע פיסוק שקופץ. */}
+          {/* User text may be in any language; dir="auto" keeps punctuation in place. */}
           <h2 className="stage-title" dir="auto">
             {project.prompt}
           </h2>
@@ -82,7 +83,7 @@ export function ProjectPage() {
             className="preview"
             title={project.prompt}
             srcDoc={project.code}
-            // הקוד נוצר על ידי מודל. הוא רץ מבודד, בלי גישה לדף שמסביבו.
+            // Model-generated code runs sandboxed, without access to the host page.
             sandbox="allow-scripts"
           />
         </div>
@@ -102,7 +103,7 @@ export function ProjectPage() {
             <Icon name="alert" size={18} />
             {t('project.failed')}
           </p>
-          <p className="empty">{project.error}</p>
+          <p className="empty">{storedMessage(language, project.error)}</p>
           <div className="error-actions">
             <button type="button" className="primary" onClick={() => retryBuild(project)}>
               <Icon name="refresh" size={16} />
@@ -116,7 +117,7 @@ export function ProjectPage() {
   )
 }
 
-/** המתנה כנה: שעון שרץ ועצות מתחלפות. אין פס התקדמות מזויף — ראה ADR-004. */
+/** Build wait state: an elapsed-time counter and rotating tips. No fake progress bar. */
 function BuildingCard({ createdAt }: { createdAt: string }) {
   const { t } = useT()
   const [seconds, setSeconds] = useState(() => elapsedSince(createdAt))
@@ -151,10 +152,7 @@ function elapsedSince(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - started) / 1000))
 }
 
-/**
- * מוריד את הפרויקט שנבנה כקובץ HTML עצמאי.
- * הקוד חי רק ב-localStorage; זו הדרך של המשתמש לקחת אותו איתו.
- */
+/** Downloads the built project as a standalone HTML file. */
 function downloadProject(project: Project): void {
   const blob = new Blob([project.code], { type: 'text/html' })
   const url = URL.createObjectURL(blob)

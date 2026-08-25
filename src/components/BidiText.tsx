@@ -1,7 +1,7 @@
 /**
- * כותרות הפרקים מערבבות עברית עם שמות מהקוד, למשל "עיצוב: :root ועוד 4 כללים".
- * בטקסט מימין לשמאל, סימן פיסוק שצמוד לקטע לטיני נדבק לצד הלא נכון,
- * וכך `:root` מוצג כ-`root:`. עטיפה ב-bdi מבודדת את הקטע ומחזירה את הסדר.
+ * Chapter titles mix RTL text with code identifiers (e.g. "עיצוב: :root ועוד 4 כללים").
+ * In an RTL run, punctuation adjacent to a Latin fragment attaches to the wrong side,
+ * rendering `:root` as `root:`. Wrapping each Latin run in <bdi> isolates it.
  */
 
 export interface BidiPart {
@@ -9,7 +9,7 @@ export interface BidiPart {
   latin: boolean
 }
 
-/** בורר קטעים לטיניים, כולל תו פתיחה של בורר CSS אם יש. */
+/** Matches Latin runs, including a leading CSS selector prefix when present. */
 const LATIN_RUN = /((?:[.:#@])?[A-Za-z][A-Za-z0-9_$-]*)/g
 
 export function splitBidiParts(text: string): BidiPart[] {

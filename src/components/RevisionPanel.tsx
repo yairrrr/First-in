@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useProjectActions } from '../state/useProjectActions'
 import { useT } from '../i18n/useT'
-import { revisionMessage } from '../i18n/errorMessage'
+import { storedMessage } from '../i18n/errorMessage'
 import { Icon } from './Icon'
 import { useToast } from './Toast'
 import type { Project } from '../state/types'
 
 /**
- * השיחה על הפרויקט: הערה נכנסת, המודל משכתב, התצוגה מתעדכנת.
- * ההיסטוריה נשמרת כבועות, ויש דרך חזרה — כי שכתוב של קובץ שלם יכול גם לשבור.
+ * Revision panel: free-text instructions are applied to the built project by the
+ * model. History is shown as a thread, with undo, since a full-file rewrite can
+ * also break things.
  */
 export function RevisionPanel({ project }: { project: Project }) {
   const { reviseProject, revertRevision } = useProjectActions()
@@ -21,12 +22,12 @@ export function RevisionPanel({ project }: { project: Project }) {
   const version = project.previousVersions.length + 1
   const appliedCount = project.revisions.filter((r) => r.status === 'applied').length
 
-  // כשמתווספת הערה או משתנה סטטוס — גוללים לסוף השיחה
+  // Keep the latest entry in view when the thread grows or a status changes
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
   }, [project.revisions.length, working])
 
-  // הודעה כשהשינוי מוחל: הספירה עולה רק כשסטטוס עובר ל-applied
+  // Toast once per newly applied revision
   const lastApplied = useRef(appliedCount)
   useEffect(() => {
     if (appliedCount > lastApplied.current) {
@@ -79,7 +80,7 @@ export function RevisionPanel({ project }: { project: Project }) {
               {revision.status === 'failed' && (
                 <>
                   <Icon name="alert" size={13} />
-                  {revisionMessage(language, revision.message) ?? t('revise.failed')}
+                  {storedMessage(language, revision.message) ?? t('revise.failed')}
                 </>
               )}
             </span>
@@ -96,7 +97,7 @@ export function RevisionPanel({ project }: { project: Project }) {
           rows={2}
           disabled={working}
           onKeyDown={(event) => {
-            // Enter שולח, Shift+Enter יורד שורה — כמו בכל צ'אט
+            // Enter submits, Shift+Enter inserts a newline
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault()
               event.currentTarget.form?.requestSubmit()

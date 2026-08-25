@@ -12,7 +12,7 @@ function makeChapter(id: string): Chapter {
 function makeProject(): Project {
   return {
     id: 'p1',
-    prompt: 'משחק זיכרון',
+    prompt: 'memory game',
     provider: 'fixture',
     status: 'building',
     code: '',
@@ -25,14 +25,17 @@ function makeProject(): Project {
   }
 }
 
+const answer = (projectId: string, chapterId: string, correct: boolean) =>
+  ({ type: 'CHAPTER_ANSWERED', projectId, chapterId, correct }) as const
+
 describe('reducer', () => {
-  it('מוסיף פרויקט חדש בראש הרשימה', () => {
+  it('prepends a new project', () => {
     const next = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
     expect(next.projects).toHaveLength(1)
     expect(next.projects[0].status).toBe('building')
   })
 
-  it('שומר את הקוד והפרקים כשהבנייה מצליחה', () => {
+  it('stores code and chapters when the build succeeds', () => {
     const created = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
     const next = reducer(created, {
       type: 'BUILD_SUCCEEDED',
@@ -44,93 +47,53 @@ describe('reducer', () => {
     expect(next.projects[0].chapters).toHaveLength(2)
   })
 
-  it('מזכה בנקודות על תשובה נכונה, ומסמן את הפרק כהושלם', () => {
-    const ready = buildReadyProject()
-    const next = reducer(ready, {
-      type: 'CHAPTER_ANSWERED',
-      projectId: 'p1',
-      chapterId: 'c1',
-      correct: true,
-    })
+  it('awards points and marks the chapter completed on a correct answer', () => {
+    const next = reducer(buildReadyProject(), answer('p1', 'c1', true))
     expect(next.projects[0].points).toBe(POINTS_PER_CHAPTER)
     expect(next.projects[0].chapters[0].completed).toBe(true)
   })
 
-  it('לא מזכה בנקודות פעמיים על אותו פרק', () => {
-    const ready = buildReadyProject()
-    const once = reducer(ready, {
-      type: 'CHAPTER_ANSWERED',
-      projectId: 'p1',
-      chapterId: 'c1',
-      correct: true,
-    })
-    const twice = reducer(once, {
-      type: 'CHAPTER_ANSWERED',
-      projectId: 'p1',
-      chapterId: 'c1',
-      correct: true,
-    })
+  it('does not award points twice for the same chapter', () => {
+    const once = reducer(buildReadyProject(), answer('p1', 'c1', true))
+    const twice = reducer(once, answer('p1', 'c1', true))
     expect(twice.projects[0].points).toBe(POINTS_PER_CHAPTER)
   })
 
-  it('תשובה שגויה נספרת כניסיון אך אינה מזכה', () => {
-    const ready = buildReadyProject()
-    const next = reducer(ready, {
-      type: 'CHAPTER_ANSWERED',
-      projectId: 'p1',
-      chapterId: 'c1',
-      correct: false,
-    })
+  it('counts a wrong answer as an attempt without awarding points', () => {
+    const next = reducer(buildReadyProject(), answer('p1', 'c1', false))
     expect(next.projects[0].points).toBe(0)
     expect(next.projects[0].chapters[0].completed).toBe(false)
     expect(next.projects[0].chapters[0].attempts).toBe(1)
   })
 
-  it('תשובה נכונה אחרי שגויה משלימה את הפרק, והניסיונות נשמרים', () => {
-    const ready = buildReadyProject()
-    const wrong = reducer(ready, {
-      type: 'CHAPTER_ANSWERED',
-      projectId: 'p1',
-      chapterId: 'c1',
-      correct: false,
-    })
-    const right = reducer(wrong, {
-      type: 'CHAPTER_ANSWERED',
-      projectId: 'p1',
-      chapterId: 'c1',
-      correct: true,
-    })
+  it('completes the chapter on a correct answer after a wrong one, keeping the attempt count', () => {
+    const wrong = reducer(buildReadyProject(), answer('p1', 'c1', false))
+    const right = reducer(wrong, answer('p1', 'c1', true))
     expect(right.projects[0].points).toBe(POINTS_PER_CHAPTER)
     expect(right.projects[0].chapters[0].attempts).toBe(2)
   })
 
-  it('שומר שיעור שנוצר עבור פרק', () => {
-    const ready = buildReadyProject()
+  it('stores a generated lesson on its chapter only', () => {
     const lesson = {
       difficulty: 'core' as const,
-      concept: 'עיקרון',
+      concept: 'concept',
       example: 'x = 1',
       exercise: {
         kind: 'choice' as const,
-        question: 'שאלה?',
-        options: ['א', 'ב', 'ג', 'ד'],
+        question: 'question?',
+        options: ['a', 'b', 'c', 'd'],
         correctIndex: 2,
       },
     }
-    const next = reducer(ready, { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
+    const next = reducer(buildReadyProject(), { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
     expect(next.projects[0].chapters[0].lesson).toEqual(lesson)
     expect(next.projects[0].chapters[1].lesson).toBeNull()
   })
 
-  it('מחשב אחוז התקדמות לפי פרקים שהושלמו', () => {
+  it('computes progress from completed chapters', () => {
     const ready = buildReadyProject()
     expect(progressPercent(ready.projects[0])).toBe(0)
-    const answered = reducer(ready, {
-      type: 'CHAPTER_ANSWERED',
-      projectId: 'p1',
-      chapterId: 'c1',
-      correct: true,
-    })
+    const answered = reducer(ready, answer('p1', 'c1', true))
     expect(progressPercent(answered.projects[0])).toBe(50)
   })
 })
@@ -145,21 +108,17 @@ function buildReadyProject() {
   })
 }
 
-describe('כישלון בנייה', () => {
-  it('שומר את הודעת השגיאה כדי שהמסך יוכל להציג אותה', () => {
+describe('build failure', () => {
+  it('stores the error message for display', () => {
     const created = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
-    const next = reducer(created, {
-      type: 'BUILD_FAILED',
-      projectId: 'p1',
-      message: 'אין תשובה מ-Ollama',
-    })
+    const next = reducer(created, { type: 'BUILD_FAILED', projectId: 'p1', message: 'unreachable' })
     expect(next.projects[0].status).toBe('failed')
-    expect(next.projects[0].error).toBe('אין תשובה מ-Ollama')
+    expect(next.projects[0].error).toBe('unreachable')
   })
 
-  it('בנייה מוצלחת מנקה שגיאה קודמת', () => {
+  it('clears a previous error on success', () => {
     const created = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
-    const failed = reducer(created, { type: 'BUILD_FAILED', projectId: 'p1', message: 'נפל' })
+    const failed = reducer(created, { type: 'BUILD_FAILED', projectId: 'p1', message: 'failed' })
     const fixed = reducer(failed, {
       type: 'BUILD_SUCCEEDED',
       projectId: 'p1',
@@ -171,111 +130,81 @@ describe('כישלון בנייה', () => {
 })
 
 describe('firstTryStats', () => {
-  it('מבחין בין הצלחה מהניסיון הראשון להצלחה אחרי טעות', () => {
-    const ready = buildReadyProject()
-    // c1 נכון מיד; c2 טעות ואז נכון
-    const afterC1 = reducer(ready, {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
-    })
-    const wrongC2 = reducer(afterC1, {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c2', correct: false,
-    })
-    const doneC2 = reducer(wrongC2, {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c2', correct: true,
-    })
-
+  it('distinguishes first-try success from success after a mistake', () => {
+    // c1: correct immediately; c2: wrong, then correct
+    const afterC1 = reducer(buildReadyProject(), answer('p1', 'c1', true))
+    const wrongC2 = reducer(afterC1, answer('p1', 'c2', false))
+    const doneC2 = reducer(wrongC2, answer('p1', 'c2', true))
     expect(firstTryStats(doneC2.projects[0])).toEqual({ firstTry: 1, completed: 2 })
   })
 
-  it('פרויקט שלא נלמד כלל מחזיר אפסים', () => {
-    const ready = buildReadyProject()
-    expect(firstTryStats(ready.projects[0])).toEqual({ firstTry: 0, completed: 0 })
+  it('returns zeros for an untouched project', () => {
+    expect(firstTryStats(buildReadyProject().projects[0])).toEqual({ firstTry: 0, completed: 0 })
   })
 })
 
-describe('מחיקת פרויקט', () => {
-  it('מסיר את הפרויקט ומשאיר את השאר', () => {
+describe('project deletion', () => {
+  it('removes only the targeted project', () => {
     const one = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
-    const two = reducer(one, {
-      type: 'PROJECT_CREATED',
-      project: { ...makeProject(), id: 'p2' },
-    })
+    const two = reducer(one, { type: 'PROJECT_CREATED', project: { ...makeProject(), id: 'p2' } })
     const next = reducer(two, { type: 'PROJECT_DELETED', projectId: 'p1' })
     expect(next.projects.map((p) => p.id)).toEqual(['p2'])
   })
 })
 
-describe('פרק שהושלם סגור', () => {
-  it('תשובה חוזרת בפרק שהושלם אינה משנה דבר, כולל את מונה הניסיונות', () => {
-    const ready = buildReadyProject()
-    const done = reducer(ready, {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
-    })
-    const again = reducer(done, {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: false,
-    })
+describe('completed chapters are closed', () => {
+  it('ignores further answers, including the attempt counter', () => {
+    const done = reducer(buildReadyProject(), answer('p1', 'c1', true))
+    const again = reducer(done, answer('p1', 'c1', false))
     expect(again).toBe(done)
     expect(firstTryStats(again.projects[0]).firstTry).toBe(1)
   })
 })
 
-describe('בנייה חוזרת', () => {
-  it('מאפס פרויקט שנכשל לנקודת ההתחלה', () => {
+describe('rebuild', () => {
+  it('resets a failed project to its initial state', () => {
     const created = reducer(initialState, { type: 'PROJECT_CREATED', project: makeProject() })
-    const failed = reducer(created, { type: 'BUILD_FAILED', projectId: 'p1', message: 'נפל' })
+    const failed = reducer(created, { type: 'BUILD_FAILED', projectId: 'p1', message: 'failed' })
     const retried = reducer(failed, { type: 'BUILD_STARTED', projectId: 'p1' })
 
     expect(retried.projects[0].status).toBe('building')
     expect(retried.projects[0].error).toBeNull()
-    expect(retried.projects[0].prompt).toBe('משחק זיכרון')
+    expect(retried.projects[0].prompt).toBe('memory game')
   })
 })
 
-describe('XP גלובלי', () => {
+describe('global XP', () => {
   const lesson = {
     difficulty: 'core' as const,
-    concept: 'עיקרון',
-   example: 'x = 1',
-    exercise: { kind: 'choice' as const, question: 'ש?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 0 },
+    concept: 'concept',
+    example: 'x = 1',
+    exercise: { kind: 'choice' as const, question: 'q?', options: ['a', 'b', 'c', 'd'], correctIndex: 0 },
   }
 
   function readyWithLesson() {
-    const ready = buildReadyProject()
-    return reducer(ready, { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
+    return reducer(buildReadyProject(), { type: 'LESSON_LOADED', projectId: 'p1', chapterId: 'c1', lesson })
   }
 
-  it('תשובה נכונה מהניסיון הראשון מוסיפה XP לפי רמת השאלה ועם בונוס', () => {
-    const next = reducer(readyWithLesson(), {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
-    })
-    expect(next.xp).toBe(25) // core 20 + בונוס 5
+  it('adds difficulty-based XP plus the first-try bonus', () => {
+    const next = reducer(readyWithLesson(), answer('p1', 'c1', true))
+    expect(next.xp).toBe(25) // core 20 + bonus 5
   })
 
-  it('תשובה שגויה לא מוסיפה XP, ותשובה נכונה אחריה מוסיפה בלי בונוס', () => {
-    const wrong = reducer(readyWithLesson(), {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: false,
-    })
+  it('adds nothing for a wrong answer, and no bonus for a later correct one', () => {
+    const wrong = reducer(readyWithLesson(), answer('p1', 'c1', false))
     expect(wrong.xp).toBe(0)
-    const right = reducer(wrong, {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
-    })
+    const right = reducer(wrong, answer('p1', 'c1', true))
     expect(right.xp).toBe(20)
   })
 
-  it('ביקור חוזר בפרק שהושלם לא מוסיף XP שוב', () => {
-    const once = reducer(readyWithLesson(), {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
-    })
-    const twice = reducer(once, {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
-    })
+  it('does not add XP when revisiting a completed chapter', () => {
+    const once = reducer(readyWithLesson(), answer('p1', 'c1', true))
+    const twice = reducer(once, answer('p1', 'c1', true))
     expect(twice.xp).toBe(once.xp)
   })
 
-  it('פרק בלי שיעור שמור נספר כרמת פתיחה', () => {
-    const next = reducer(buildReadyProject(), {
-      type: 'CHAPTER_ANSWERED', projectId: 'p1', chapterId: 'c1', correct: true,
-    })
+  it('treats a chapter without a cached lesson as intro difficulty', () => {
+    const next = reducer(buildReadyProject(), answer('p1', 'c1', true))
     expect(next.xp).toBe(15)
   })
 })

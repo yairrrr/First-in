@@ -21,36 +21,36 @@ describe('nextChapterToPrefetch', () => {
     exercise: { kind: 'assemble' as const, instruction: 'i', tokens: ['a', 'b', 'c'] },
   }
 
-  it('בלי נקודת מוצא: הפרק הראשון שטרם הושלם ואין לו שיעור', () => {
+  it('without an anchor: the first incomplete chapter with no lesson', () => {
     const p = project([chapter('a', { completed: true }), chapter('b'), chapter('c')])
     expect(nextChapterToPrefetch(p)?.id).toBe('b')
   })
 
-  it('כשלמועמד כבר יש שיעור — עוצר ולא ממשיך לפרק הבא', () => {
-    // זה מה שמונע שרשרת: שיעור שנטען לא מצית את הבא אחריו.
+  it('stops when the candidate already has a lesson instead of searching further', () => {
+    // This prevents cascades: a loaded lesson never triggers the next one.
     const p = project([chapter('a', { lesson }), chapter('b')])
     expect(nextChapterToPrefetch(p)).toBeNull()
     expect(nextChapterToPrefetch(p, 'a')?.id).toBe('b')
   })
 
-  it('עם נקודת מוצא: רק הפרק הצמוד, לא מחפשים קדימה', () => {
+  it('with an anchor: only the adjacent chapter, no look-ahead', () => {
     const p = project([chapter('a', { completed: true }), chapter('b', { lesson }), chapter('c')])
     expect(nextChapterToPrefetch(p, 'a')).toBeNull()
   })
 
-  it('עם נקודת מוצא: מתחיל מהפרק שאחריה', () => {
+  it('with an anchor: starts from the chapter after it', () => {
     const p = project([chapter('a'), chapter('b'), chapter('c')])
     expect(nextChapterToPrefetch(p, 'a')?.id).toBe('b')
   })
 
-  it('מחזיר null כשאין מה להטעין', () => {
+  it('returns null when there is nothing to prefetch', () => {
     const p = project([chapter('a', { completed: true }), chapter('b', { lesson })])
     expect(nextChapterToPrefetch(p)).toBeNull()
     expect(nextChapterToPrefetch(p, 'b')).toBeNull()
   })
 
-  it('נקודת מוצא לא מוכרת: לא מטעין כלום', () => {
+  it('returns null for an unknown anchor', () => {
     const p = project([chapter('a')])
-    expect(nextChapterToPrefetch(p, 'זר')).toBeNull()
+    expect(nextChapterToPrefetch(p, 'unknown')).toBeNull()
   })
 })

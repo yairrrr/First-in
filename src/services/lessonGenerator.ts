@@ -7,16 +7,16 @@ import type {
 } from '../state/types'
 
 /**
- * lessonGenerator — פרק קוד אחד נכנס, שיעור יוצא: פסקת עיקרון ותרגיל.
+ * lessonGenerator: one chapter of code in, one lesson out (concept, example, exercise).
  *
- * נקרא רק כשהמשתמש פותח פרק, ולא מראש — ראה ADR-005.
- * מבנה השאלה האמריקאית נגזר מסעיף 10 ב-PRD. פורמט ההרכבה נקבע ב-ADR-010.
- * הצורה נאכפת בסכמה דרך הספק — ראה SPIKE-004.
+ * Lessons are generated when a chapter is opened, never ahead of time. The
+ * response shape is enforced through a JSON schema passed to the provider and
+ * validated again here before it reaches the UI.
  */
 
 export const OPTION_COUNT = 4
 
-/** גבולות תרגיל ההרכבה: מעט משבצות, שורה קצרה. בלי להעמיס — הנחיית המוצר. */
+/** Assemble-exercise bounds: few tokens, one short line. Keeps beginner exercises light. */
 export const MIN_TOKENS = 3
 export const MAX_TOKENS = 6
 export const MAX_ASSEMBLED_LENGTH = 90
@@ -24,8 +24,8 @@ export const MAX_ASSEMBLED_LENGTH = 90
 export type ExerciseKind = 'choice' | 'assemble'
 
 /**
- * סוג התרגיל נקבע בקוד, לא על ידי המודל — צפוי ובדיק:
- * פתיחה בהרכבה קלילה, עומק בשאלות חשיבה, ובאמצע לסירוגין.
+ * Exercise kind is decided in code, not by the model, so it is predictable and
+ * testable: assemble at intro, multiple choice at deep, alternating in between.
  */
 export function exerciseKindFor(difficulty: LessonDifficulty, chapterIndex: number): ExerciseKind {
   if (difficulty === 'intro') return 'assemble'
@@ -33,7 +33,7 @@ export function exerciseKindFor(difficulty: LessonDifficulty, chapterIndex: numb
   return chapterIndex % 2 === 0 ? 'choice' : 'assemble'
 }
 
-/** גבולות קריאות. שאלה ארוכה מזה היא שאלה מסובכת, ולכן נדחית. */
+/** Readability bounds. Longer output is treated as too complex and rejected. */
 export const MAX_QUESTION_CHARS = 120
 export const MAX_OPTION_CHARS = 70
 export const MAX_CONCEPT_CHARS = 320
@@ -55,8 +55,8 @@ export const LESSON_SYSTEM_PROMPT = [
 ].join(' ')
 
 /**
- * הנחיות הקושי. הנחיית המוצר: ברמות הנמוכות כמעט בלי מונחים מקצועיים
- * וכמה שפחות קוד. גם שאלה קלה אסור שתהיה ניתנת למענה בלי לקרוא את הקוד.
+ * Per-difficulty instructions. Lower tiers avoid jargon and keep code minimal;
+ * at every tier the question must still require reading the code.
  */
 const DIFFICULTY_PROMPTS: Record<LessonDifficulty, string> = {
   intro: [
@@ -119,7 +119,7 @@ export const ASSEMBLE_SCHEMA: Record<string, unknown> = {
   required: ['concept', 'example', 'instruction', 'tokens'],
 }
 
-/** נזרקת כשהמודל החזיר שיעור שאינו עומד במבנה המחייב. */
+/** Thrown when the model output does not satisfy the lesson contract. */
 export class LessonError extends Error {
   constructor(message: string) {
     super(message)
@@ -169,24 +169,24 @@ export function buildPrompt({ title, code, language, difficulty, kind }: LessonR
   ].join('\n\n')
 }
 
-/** הפלט מגיע ממודל, ולכן הוא נבדק ולא מונח. כישלון כאן עדיף על תרגיל שבור במסך. */
+/** Model output is untrusted; failing here is preferable to a broken exercise on screen. */
 export function parseLesson(kind: ExerciseKind, difficulty: LessonDifficulty, text: string): Lesson {
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
   } catch {
-    throw new LessonError('המודל לא החזיר JSON תקין')
+    throw new LessonError('Model output is not valid JSON')
   }
-  if (!isRecord(parsed)) throw new LessonError('המודל לא החזיר אובייקט')
+  if (!isRecord(parsed)) throw new LessonError('Model output is not an object')
 
   const concept = asText(parsed.concept)
-  if (!concept) throw new LessonError('חסרה פסקת העיקרון')
-  if (concept.length > MAX_CONCEPT_CHARS) throw new LessonError('פסקת העיקרון ארוכה מדי')
+  if (!concept) throw new LessonError('Missing concept')
+  if (concept.length > MAX_CONCEPT_CHARS) throw new LessonError('Concept is too long')
 
   const example = asText(parsed.example)
-  if (!example) throw new LessonError('חסרה דוגמת קוד')
+  if (!example) throw new LessonError('Missing code example')
   if (example.length > MAX_EXAMPLE_CHARS || example.split('\n').length > MAX_EXAMPLE_LINES) {
-    throw new LessonError('דוגמת הקוד ארוכה מדי — עד שלוש שורות קצרות')
+    throw new LessonError(`Code example exceeds ${MAX_EXAMPLE_LINES} short lines`)
   }
 
   const exercise = kind === 'choice' ? parseChoice(parsed) : parseAssemble(parsed)
@@ -195,25 +195,25 @@ export function parseLesson(kind: ExerciseKind, difficulty: LessonDifficulty, te
 
 function parseChoice(parsed: Record<string, unknown>): ChoiceExercise {
   const question = asText(parsed.question)
-  if (!question) throw new LessonError('חסרה שאלה')
-  if (question.length > MAX_QUESTION_CHARS) throw new LessonError('השאלה ארוכה ומסובכת מדי')
+  if (!question) throw new LessonError('Missing question')
+  if (question.length > MAX_QUESTION_CHARS) throw new LessonError('Question is too long')
 
-  if (!Array.isArray(parsed.options)) throw new LessonError('חסרות אפשרויות')
+  if (!Array.isArray(parsed.options)) throw new LessonError('Missing options')
   const options = parsed.options.map(asText)
   if (options.length !== OPTION_COUNT || options.some((option) => !option)) {
-    throw new LessonError(`נדרשות בדיוק ${OPTION_COUNT} אפשרויות, וכולן לא ריקות`)
+    throw new LessonError(`Expected exactly ${OPTION_COUNT} non-empty options`)
   }
-  if (new Set(options).size !== options.length) throw new LessonError('שתי אפשרויות זהות')
+  if (new Set(options).size !== options.length) throw new LessonError('Duplicate options')
   if (options.some((option) => option.length > MAX_OPTION_CHARS)) {
-    throw new LessonError('אפשרות ארוכה מדי — התשובות אמורות להיות קצרות')
+    throw new LessonError('Option is too long')
   }
 
   const correctIndex = parsed.correctIndex
   if (typeof correctIndex !== 'number' || !Number.isInteger(correctIndex)) {
-    throw new LessonError('חסר מספר האפשרות הנכונה')
+    throw new LessonError('Missing correct option index')
   }
   if (correctIndex < 0 || correctIndex >= OPTION_COUNT) {
-    throw new LessonError('מספר האפשרות הנכונה מחוץ לתחום')
+    throw new LessonError('Correct option index out of range')
   }
 
   return { kind: 'choice', question, options, correctIndex }
@@ -221,9 +221,9 @@ function parseChoice(parsed: Record<string, unknown>): ChoiceExercise {
 
 function parseAssemble(parsed: Record<string, unknown>): AssembleExercise {
   const instruction = asText(parsed.instruction)
-  if (!instruction) throw new LessonError('חסרה הוראת ההרכבה')
+  if (!instruction) throw new LessonError('Missing assemble instruction')
 
-  if (!Array.isArray(parsed.tokens)) throw new LessonError('חסרות משבצות')
+  if (!Array.isArray(parsed.tokens)) throw new LessonError('Missing tokens')
   const tokens = parsed.tokens.map((token) => (typeof token === 'string' ? token : ''))
   const trimmed = tokens.map((token) => token.trim())
   if (
@@ -231,10 +231,10 @@ function parseAssemble(parsed: Record<string, unknown>): AssembleExercise {
     trimmed.length > MAX_TOKENS ||
     trimmed.some((token) => !token)
   ) {
-    throw new LessonError(`נדרשות ${MIN_TOKENS} עד ${MAX_TOKENS} משבצות, וכולן לא ריקות`)
+    throw new LessonError(`Expected ${MIN_TOKENS} to ${MAX_TOKENS} non-empty tokens`)
   }
   if (trimmed.join(' ').length > MAX_ASSEMBLED_LENGTH) {
-    throw new LessonError('השורה המורכבת ארוכה מדי — התרגיל אמור להיות קליל')
+    throw new LessonError('Assembled line is too long')
   }
 
   return { kind: 'assemble', instruction, tokens: trimmed }

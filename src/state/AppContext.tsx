@@ -10,13 +10,13 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-/** האחסון של הדפדפן. אינו קיים בסביבת בדיקות, ולכן נבדק ולא מונח. */
+/** localStorage is absent in the test environment. */
 function browserStorage() {
   return typeof localStorage === 'undefined' ? undefined : localStorage
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  // המצב ההתחלתי נטען פעם אחת, ולא בכל רינדור.
+  // Lazy initializer: stored state is read once, not on every render.
   const [state, dispatch] = useReducer(reducer, undefined, () => loadState(browserStorage()))
 
   useEffect(() => {
@@ -26,9 +26,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return <AppContext value={{ state, dispatch }}>{children}</AppContext>
 }
 
-/** הדרך היחידה של רכיב לקרוא מצב או לשלוח פעולה. */
 export function useApp(): AppContextValue {
   const value = useContext(AppContext)
-  if (!value) throw new Error('useApp נקרא מחוץ ל-AppProvider')
+  if (!value) throw new Error('useApp must be used within AppProvider')
   return value
 }

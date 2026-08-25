@@ -1,24 +1,23 @@
 /*
- * First-In — מערכת העיצוב, גרסה 2: כהה-קולנועי סביב הלוגו.
+ * First-In design system.
  *
- * שני כללי ברזל:
- * 1. פריסה ב-Flexbox בלבד, ללא ספריית עיצוב — דרישת המחוון, וה-CSS גלוי בקוד.
- * 2. כל הערכים החוזרים יושבים בטוקנים. רכיב לא ממציא צבע משלו.
+ * Two rules: layout is Flexbox only, with no CSS framework; and every repeated
+ * value lives in a token below. Components never introduce ad-hoc colors.
  */
 
 :root {
-  /* משטחים — גרדיאנט לילה עמוק, אף פעם לא שחור טהור */
+  /* Surfaces: deep night palette, never pure black */
   --bg-deep: #05050a;
   --bg-base: #0a0a12;
   --surface: rgba(255, 255, 255, 0.045);
   --surface-solid: #12121c;
   --line: rgba(255, 255, 255, 0.09);
 
-  /* טקסט */
+  /* Text */
   --text: #f1f1f6;
   --muted: #9b9bb0;
 
-  /* המותג: הגרדיאנט של הלוגו — סגול אל תכלת */
+  /* Brand: the logo gradient, purple to cyan */
   --brand-purple: #a06bfa;
   --brand-cyan: #2bd4f0;
   --brand-gradient: linear-gradient(120deg, var(--brand-purple), #5f8bfd 55%, var(--brand-cyan));
@@ -28,13 +27,13 @@
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.35);
 
-  /* משוב */
+  /* Feedback */
   --good: #4ade80;
   --good-soft: rgba(74, 222, 128, 0.12);
   --bad: #f87171;
   --bad-soft: rgba(248, 113, 113, 0.1);
 
-  /* מידות ותנועה */
+  /* Sizing and motion */
   --radius: 12px;
   --radius-s: 8px;
   --pad: 22px;
@@ -61,46 +60,11 @@ body {
   line-height: 1.6;
 }
 
-/* ---------- אווירה: כתמי אור ברקע ---------- */
-
-.ambient {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.blob {
-  display: none;
-}
-
-.blob-purple {
-  top: -18vw;
-  inset-inline-start: -10vw;
-  background: var(--brand-purple);
-  animation: drift 26s ease-in-out infinite alternate;
-}
-
-.blob-cyan {
-  bottom: -20vw;
-  inset-inline-end: -12vw;
-  background: var(--brand-cyan);
-  opacity: 0.09;
-  animation: drift 32s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes drift {
-  from { transform: translate(0, 0); }
-  to { transform: translate(4vw, 3vw); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .blob { animation: none; }
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
-/* ---------- שלד ---------- */
+/* ---------- Shell ---------- */
 
 .app {
   position: relative;
@@ -119,7 +83,7 @@ body {
   background: var(--bg-base);
 }
 
-/* שני צדדים שווי משקל, כדי שהמרכז יהיה מרכז אמיתי */
+/* Equal-weight sides keep the center truly centered */
 .header-side {
   display: flex;
   flex: 1;
@@ -170,7 +134,7 @@ body {
   letter-spacing: 1.4px;
 }
 
-/* ---------- באנר השלב ---------- */
+/* ---------- Rank banner ---------- */
 
 .stage-banner {
   display: flex;
@@ -233,7 +197,7 @@ body {
   font-weight: 700;
 }
 
-/* ---------- אזור התוכן ---------- */
+/* ---------- Content area ---------- */
 
 .main {
   display: flex;
@@ -274,9 +238,8 @@ a {
   color: var(--accent);
 }
 
-/* כרטיס זכוכית — אבן הבניין של כל המסכים */
+/* Card surface shared by every screen */
 .build-form,
-.project-row,
 .progress,
 .chapter-card,
 .question,
@@ -288,7 +251,7 @@ a {
   border-radius: var(--radius);
 }
 
-/* ---------- מסך הבית ---------- */
+/* ---------- Home ---------- */
 
 .hero {
   display: flex;
@@ -410,40 +373,7 @@ a {
   accent-color: var(--brand-purple);
 }
 
-/* ---------- רשימת הפרויקטים ---------- */
-
-.project-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.project-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px var(--pad);
-  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
-}
-
-.project-row:hover {
-  border-color: var(--accent);
-}
-
-.project-row > a {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text);
-  text-decoration: none;
-  font-weight: 600;
-}
+/* ---------- Project list ---------- */
 
 .row-side {
   display: flex;
@@ -474,7 +404,7 @@ a {
   border-color: var(--bad);
 }
 
-/* ---------- מסך הפרויקט ---------- */
+/* ---------- Project screen ---------- */
 
 .waiting {
   display: flex;
@@ -523,27 +453,6 @@ a {
   gap: 16px;
 }
 
-.study-cta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 17px var(--pad);
-  background: var(--accent-soft);
-  border: 1px solid var(--brand-purple);
-  border-radius: var(--radius);
-  color: var(--text);
-  text-decoration: none;
-  font-weight: 700;
-  transition: border-color 0.2s var(--ease);
-}
-
-.study-cta:hover {
-  border-color: var(--accent);
-}
-
-.study-cta .meta { color: var(--accent); }
-
 .project-tools {
   display: flex;
   justify-content: flex-end;
@@ -566,7 +475,7 @@ a {
   border-color: var(--accent);
 }
 
-/* ---------- מפת המסע ---------- */
+/* ---------- Study map ---------- */
 
 .progress {
   display: flex;
@@ -693,7 +602,7 @@ a {
 .done-banner p { margin: 0; }
 .done-banner p:first-child { font-size: 18px; font-weight: 800; }
 
-/* ---------- מסך הפרק ---------- */
+/* ---------- Chapter screen ---------- */
 
 .code {
   max-height: 380px;
@@ -859,7 +768,7 @@ a {
   75% { transform: translateX(-5px); }
 }
 
-/* ---------- תרגיל ההרכבה ---------- */
+/* ---------- Assemble exercise ---------- */
 
 .answer-row {
   display: flex;
@@ -960,7 +869,7 @@ a {
   box-shadow: var(--shadow-1);
 }
 
-/* ---------- מסכים צרים ---------- */
+/* ---------- Narrow screens ---------- */
 
 @media (max-width: 640px) {
   .header { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
@@ -971,7 +880,7 @@ a {
   .preview { height: 440px; }
 }
 
-/* ---------- בורר שפה ---------- */
+/* ---------- Language switch ---------- */
 
 .language-switch {
   display: flex;
@@ -997,19 +906,19 @@ a {
   border-color: var(--brand-purple);
 }
 
-/* ---------- הבמה: התוצר ממלא את כל מה שנשאר מהמסך ---------- */
+/* ---------- Stage: the preview fills the remaining viewport ---------- */
 
 .panel-wide {
   max-width: 1180px;
 }
 
-/* גובה הכותרת נמדד ב-App ומפורסם כ---header-h. dvh ולא vh — בגלל סרגלי דפדפן במובייל. */
+/* --header-h is measured in App. dvh rather than vh accounts for mobile browser chrome. */
 .stage {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: calc(100dvh - var(--header-h, 80px));
-  /* מבטל את הריווח של .main, כדי שהבמה תיגע בקצוות */
+  /* Cancel .main padding so the stage reaches the edges */
   margin: -40px -24px -72px;
   width: calc(100% + 48px);
 }
@@ -1074,7 +983,7 @@ a {
   .stage-cta { flex: 1; text-align: center; }
 }
 
-/* ---------- קוד מודגש ---------- */
+/* ---------- Highlighted code ---------- */
 
 .code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -1099,7 +1008,7 @@ a {
 .tk-fn { color: #ffd580; }
 .tk-punct { color: #9aa0b8; }
 
-/* קוד בתוך שורת טקסט: `כך` */
+/* Inline code within prose */
 .inline-code {
   padding: 1px 7px;
   background: rgba(43, 212, 240, 0.12);
@@ -1111,7 +1020,7 @@ a {
   unicode-bidi: embed;
 }
 
-/* דוגמת הקוד בכרטיס העיקרון */
+/* Code example inside the concept card */
 .example {
   display: flex;
   flex-direction: column;
@@ -1125,7 +1034,7 @@ a {
 }
 
 /* =====================================================================
-   סבב עיצוב מוצר — יסודות: פוקוס, תנועה, אייקונים
+   Foundations: focus, motion, icons
    ===================================================================== */
 
 :focus-visible {
@@ -1152,7 +1061,7 @@ a {
   transform: scaleX(-1);
 }
 
-/* כפתורים עם אייקון: אייקון וטקסט באותה שורה, בריווח אחיד */
+/* Buttons with icons: icon and label on one line, uniform gap */
 .primary,
 .ghost,
 .stage-cta,
@@ -1192,7 +1101,7 @@ a {
   border-color: var(--bad);
 }
 
-/* ---------- צ'יפים ---------- */
+/* ---------- Chips ---------- */
 
 .chip {
   display: inline-flex;
@@ -1222,7 +1131,7 @@ a {
   font-weight: 800;
 }
 
-/* ---------- הודעות צפות ---------- */
+/* ---------- Toasts ---------- */
 
 .toasts {
   position: fixed;
@@ -1271,7 +1180,7 @@ a {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ---------- דף הבית: טופס, "איך זה עובד", כרטיסי פרויקטים ---------- */
+/* ---------- Home: form, how-it-works, project cards ---------- */
 
 .build-label {
   display: flex;
@@ -1364,7 +1273,7 @@ a {
 
 .project-thumb-link { display: flex; }
 
-/* תצוגה חיה מוקטנת: iframe ברוחב מלא שמוקטן פי 4, בלי אינטראקציה */
+/* Scaled thumbnail: a full-width iframe scaled to 25%, non-interactive */
 .project-thumb {
   position: relative;
   display: flex;
@@ -1428,7 +1337,7 @@ a {
   inset-inline-end: 12px;
 }
 
-/* ---------- מפת המסע: סיכום ואייקוני פרקים ---------- */
+/* ---------- Study map: summary and chapter icons ---------- */
 
 .study-head {
   display: flex;
@@ -1525,7 +1434,7 @@ a {
 
 .done-banner > span { display: flex; flex-direction: column; gap: 4px; color: var(--text); }
 
-/* ---------- פרק: כותרת, סטפר, ניווט ---------- */
+/* ---------- Chapter: heading, stepper, navigation ---------- */
 
 .chapter-head {
   display: flex;
@@ -1632,10 +1541,10 @@ a {
 }
 
 /* =====================================================================
-   ליטוש: יעדי מגע, היררכיה, מובייל — ללא שינוי מבנה
+   Polish: touch targets, hierarchy, mobile
    ===================================================================== */
 
-/* יעדי מגע: 40px לפחות לכל פעולה */
+/* Touch targets: at least 40px for every action */
 .icon-button { width: 40px; height: 40px; }
 .tile { min-height: 44px; }
 .option { min-height: 48px; }
@@ -1645,18 +1554,18 @@ a {
 .project-card-title { display: block; padding: 6px 0; min-height: 36px; }
 .chapter-card { min-height: 64px; }
 
-/* לחיצה: משוב קטן ומיידי, בלי הזזות ריחוף */
+/* Press feedback: subtle scale, no hover displacement */
 .ghost:active, .link-button:active { transform: scale(0.98); }
 .primary:active:enabled { transform: scale(0.98); }
 
-/* שדות טקסט: 16px במובייל מונע זום אוטומטי ב-iOS */
+/* 16px inputs prevent automatic zoom on iOS */
 .prompt-input { font-size: 16px; line-height: 1.55; }
 .prompt-input::placeholder { color: rgba(155, 155, 176, 0.7); }
 
-/* --- מובייל: כותרת בשתי שורות מסודרות --- */
+/* --- Mobile: two-row header --- */
 @media (max-width: 640px) {
   .header { gap: 8px 12px; padding: 10px 14px; }
-  /* הצד הימני מתפרק לילדים ישירים, כדי לסדר: לוגו | שם | שפה, ומתחת הדרגה */
+  /* Flatten the start side so the order becomes: logo | wordmark | language, then the rank banner */
   .header-side:first-child { display: contents; }
   .logo-link { order: 1; }
   .brand-center { order: 2; flex: 1; min-height: 40px; }
@@ -1667,7 +1576,7 @@ a {
   .brand-name { font-size: 17px; letter-spacing: 1.5px; }
   .language-label { display: none; }
 
-  /* הבמה: שורת הכלים נשברת, ה-CTA לרוחב מלא — בלי גלילה אופקית */
+  /* Stage: toolbar wraps, CTA spans full width, no horizontal overflow */
   .stage { margin: -24px -14px -56px; width: calc(100% + 28px); }
   .stage-bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 10px 14px; }
   .stage-title { white-space: normal; font-size: 15px; }
@@ -1675,7 +1584,7 @@ a {
   .stage-tools .ghost { flex: 1; justify-content: center; }
   .stage-cta { flex-basis: 100%; justify-content: center; }
 
-  /* הבית: הבלוק העליון קטן יותר, הכותרת כבר בראש הדף */
+  /* Home: smaller hero; the wordmark is already in the header */
   .hero { padding: 12px 0 0; gap: 6px; }
   .hero-logo { width: 56px; height: 56px; border-radius: 14px; }
   .hero-name { font-size: 26px; letter-spacing: 3px; }
@@ -1683,7 +1592,7 @@ a {
   .build-actions { flex-direction: column; align-items: stretch; }
   .build-actions .primary { justify-content: center; }
 
-  /* מפה ופרק */
+  /* Map and chapter */
   .study-head { flex-direction: column; align-items: flex-start; }
   .chapter-side { flex-direction: column; align-items: flex-end; gap: 4px; }
   .chapter-nav { flex-wrap: wrap; gap: 10px; }
@@ -1691,15 +1600,15 @@ a {
   .toast { min-width: 0; }
 }
 
-/* --- טאבלט: כרטיס לרוחב, ריווח מתון --- */
+/* --- Tablet: full-width cards, moderate spacing --- */
 @media (min-width: 641px) and (max-width: 900px) {
   .main { padding: 28px 20px 56px; }
   .project-card { flex-basis: 100%; }
-  /* הבמה מבטלת בדיוק את הריווח של .main בטאבלט, כדי שלא תגלוש */
+  /* The stage cancels the tablet .main padding exactly, to avoid overflow */
   .stage { margin: -28px -20px -56px; width: calc(100% + 40px); }
 }
 
-/* ---------- המשך עבודה: פאנל השיחה על הפרויקט ---------- */
+/* ---------- Revision panel ---------- */
 
 .stage-body {
   display: flex;
@@ -1756,7 +1665,7 @@ a {
   line-height: 1.7;
 }
 
-/* בועת הערה: מיושרת לצד ההתחלה, כמו הודעה שלי בצ'אט */
+/* Instruction bubble, aligned to the start edge */
 .revision {
   display: flex;
   flex-direction: column;
@@ -1827,7 +1736,7 @@ a {
 }
 
 @media (max-width: 900px) {
-  /* במסך צר הפאנל יושב מעל התצוגה, לא לצידה */
+  /* On narrow screens the panel stacks above the preview */
   .stage-body { flex-direction: column; }
   .revision-panel {
     width: 100%;

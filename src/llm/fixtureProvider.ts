@@ -13,21 +13,21 @@ const LESSONS: Record<Language, { assemble: string; choice: string }> = {
 }
 
 /**
- * ספק שמחזיר תשובות שמורות מראש, בלי לדבר עם שום מודל.
- * שני תפקידים: בדיקות אוטומטיות יציבות, ומצב הדגמה למי שאין לו Ollama.
+ * Provider that returns recorded responses without contacting a model.
+ * Used for deterministic tests and for demo mode when Ollama is unavailable.
  *
- * כל התשובות הן פלט אמיתי של gemma4:12b, ולא קוד שנכתב ביד.
- * מגבלה מודעת: במצב הדגמה כל הפרקים חולקים שני שיעורים שמורים לכל שפה.
+ * The recordings are real gemma4:12b output. Known limitation: in demo mode
+ * every chapter shares the same two recorded lessons per language.
  */
 export function createFixtureProvider(language: Language = 'he'): LlmProvider {
   return {
     name: 'fixture',
     async complete(request: LlmRequest): Promise<LlmResponse> {
-      // בקשת שינוי: מחזירים את הקוד הנוכחי עם שורת הדגמה, כדי שהזרימה תיראה.
+      // Revision request: echo the current code with a visible demo note.
       if (!request.schema && request.prompt.includes(REVISE_MARKER)) {
         return { text: demoRevision(request.prompt) }
       }
-      // בקשה בלי סכמה היא בקשת בנייה. עם סכמה — שיעור, והסוג מזוהה לפי הצורה.
+      // No schema means a build request; with a schema, the lesson kind is inferred from its shape.
       if (!request.schema) return { text: memoryHtml }
       const properties = (request.schema.properties ?? {}) as Record<string, unknown>
       const lessons = LESSONS[language]
@@ -37,8 +37,8 @@ export function createFixtureProvider(language: Language = 'he'): LlmProvider {
 }
 
 /**
- * מצב הדגמה לא יכול לשכתב קוד באמת. במקום זה: הקוד הנוכחי חוזר עם פס דק
- * בראש הדף שמצטט את ההערה — כך רואים שהשינוי "התקבל", בלי להעמיד פנים.
+ * Demo mode cannot rewrite code. The current code is returned with a small
+ * banner quoting the instruction, so the revision flow is visible end to end.
  */
 function demoRevision(prompt: string): string {
   const instruction = (/^The user's request: (.*)$/m.exec(prompt)?.[1] ?? '').trim()

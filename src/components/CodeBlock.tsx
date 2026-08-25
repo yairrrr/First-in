@@ -1,14 +1,14 @@
 import { highlight, type CodeLanguage } from './highlight'
 import type { ChapterTitle } from '../state/types'
 
-/** שפת ההדגשה לפי סוג הפרק: כל פרק הוא אזור אחד בלבד — מבנה, עיצוב או התנהגות. */
+/** Highlight language by chapter kind; each chapter belongs to exactly one zone. */
 export function languageForChapter(title: ChapterTitle): CodeLanguage {
   if (title.kind === 'markup') return 'html'
   if (title.kind === 'css') return 'css'
   return 'js'
 }
 
-/** בלוק קוד עם הדגשת תחביר. תמיד משמאל לימין, גם בממשק עברי. */
+/** Syntax-highlighted code block. Always left-to-right, regardless of UI direction. */
 export function CodeBlock({
   code,
   language,

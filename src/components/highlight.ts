@@ -1,6 +1,6 @@
 /**
- * הדגשת תחביר קטנה משלנו, בלי ספרייה — ל-HTML, CSS ו-JavaScript.
- * לא מנתח תחביר מלא: מספיק כדי שקוד ייראה כמו קוד ולא כמו טקסט אפור.
+ * Minimal dependency-free syntax highlighter for HTML, CSS and JavaScript.
+ * Not a full parser; tokenizes enough for readable display.
  */
 
 export type CodeLanguage = 'html' | 'css' | 'js'
@@ -68,7 +68,7 @@ function highlightCss(code: string): Token[] {
 
   while (i < code.length) {
     if (depth === 0) {
-      // מחוץ לסוגריים: הערה, או בורר עד הסוגר הפותח
+      // Outside braces: a comment, or a selector up to the opening brace
       const comment = /^\/\*[\s\S]*?\*\//.exec(code.slice(i))
       if (comment) {
         tokens.push({ type: 'comment', text: comment[0] })
@@ -91,7 +91,7 @@ function highlightCss(code: string): Token[] {
       continue
     }
 
-    // בתוך סוגריים: מאפיין, ערכים, ופיסוק
+    // Inside braces: properties, values and punctuation
     const close = code.indexOf('}', i)
     const nextOpen = code.indexOf('{', i)
     const end = close === -1 ? code.length : nextOpen !== -1 && nextOpen < close ? nextOpen : close
@@ -110,7 +110,7 @@ function highlightCss(code: string): Token[] {
     if (i < code.length) {
       const char = code[i]
       tokens.push({ type: 'punct', text: char })
-      // כלל מקונן, כמו @media: העומק גדל, ומה שלפני הסוגר כבר נצבע כטקסט
+      // Nested rule (e.g. @media): depth increases; text before the brace is already emitted
       depth += char === '{' ? 1 : -1
       i++
     }
@@ -134,7 +134,7 @@ function highlightHtml(code: string): Token[] {
     if (open) {
       tokens.push({ type: 'tag', text: open[0] })
       i += open[0].length
-      // בתוך התגית: מאפיינים, מחרוזות, ושוויון — עד הסוגר
+      // Inside a tag: attributes, strings and '=' until the closing bracket
       while (i < code.length) {
         const inner = code.slice(i)
         const closeTag = /^\s*\/?>/.exec(inner)
@@ -163,7 +163,7 @@ function highlightHtml(code: string): Token[] {
   return merge(tokens)
 }
 
-/** מאחד טקסטים סמוכים מאותו סוג, כדי שה-DOM לא יתמלא ב-span לכל רווח. */
+/** Merges adjacent tokens of the same type to keep the DOM small. */
 function merge(tokens: Token[]): Token[] {
   const out: Token[] = []
   for (const token of tokens) {

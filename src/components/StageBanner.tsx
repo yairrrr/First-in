@@ -3,10 +3,7 @@ import { nextRank, rankForXp, rankProgress } from '../state/rank'
 import { useT } from '../i18n/useT'
 import type { StringKey } from '../i18n/strings'
 
-/**
- * באנר הדרגה בכותרת העליונה: הדרגה הגלובלית של המשתמש, ה-XP,
- * וכמה חסר לדרגה הבאה. מוצג בכל מסך, כי הדרגה חוצה פרויקטים.
- */
+/** Header rank banner: current rank, XP, and progress toward the next rank. */
 export function StageBanner() {
   const { state } = useApp()
   const { t } = useT()

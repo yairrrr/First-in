@@ -1,8 +1,9 @@
 /**
- * כל מחרוזת שהמשתמש רואה, בשתי השפות.
+ * Every user-facing string, in both languages.
  *
- * עברית: לשון פנייה ניטרלית — צורת רבים ("בנו", "בחרו") או שם פועל ("לבנות"),
- * לעולם לא יחיד בזכר או בנקבה. זו הנחיית המוצר.
+ * Hebrew copy uses gender-neutral address: plural imperative ("בנו", "בחרו")
+ * or the infinitive ("לבנות"), never singular masculine or feminine forms.
+ * `strings.test.ts` enforces this.
  */
 
 export type Language = 'he' | 'en'
@@ -10,7 +11,7 @@ export type Language = 'he' | 'en'
 export const LANGUAGES: readonly Language[] = ['he', 'en']
 
 const he = {
-  // כללי
+  // General
   'app.slogan': 'Build what you want. Learn what you built.',
   'nav.back': 'חזרה לרשימה',
   'nav.backToProject': 'חזרה לפרויקט',
@@ -19,7 +20,7 @@ const he = {
   'nav.next': 'הפרק הבא',
   'settings.language': 'שפה',
 
-  // בית
+  // Home
   'home.title': 'מה בונים היום?',
   'home.placeholder': 'לדוגמה: משחק זיכרון עם 8 זוגות קלפים, מונה מהלכים וכפתור התחלה מחדש',
   'home.build': 'לבנות את זה',
@@ -32,7 +33,7 @@ const he = {
   'status.failed': 'נכשל',
   'status.learned': '{percent}% נלמדו',
 
-  // פרויקט
+  // Project
   'project.notFound': 'הפרויקט לא נמצא',
   'project.building': 'בונים את הפרויקט שלכם.',
   'project.buildingHint': 'המודל רץ מקומית על המחשב. זה לוקח בערך שתי דקות.',
@@ -43,7 +44,7 @@ const he = {
   'project.download': 'הורדה כקובץ HTML',
   'project.fullscreen': 'מסך מלא',
 
-  // מפה
+  // Study map
   'study.title': 'מפת הפרויקט',
   'study.nothingYet': 'אין עדיין מה ללמוד',
   'study.nothingHint': 'הפרקים נוצרים אחרי שהפרויקט נבנה.',
@@ -55,7 +56,7 @@ const he = {
   'study.completed': 'הושלם',
   'study.next': 'הבא בתור',
 
-  // פרק
+  // Chapter
   'chapter.notFound': 'הפרק לא נמצא',
   'chapter.heading': 'פרק {n} מתוך {total}',
   'chapter.showCode': 'להציג את הקוד של הפרק',
@@ -73,7 +74,7 @@ const he = {
   'feedback.wrongChoice': 'לא זה. כדאי לקרוא שוב את הקוד ולנסות שוב.',
   'feedback.wrongOrder': 'כמעט. אפשר לנסות סדר אחר.',
 
-  // דרגה
+  // Rank
   'rank.label': 'דרגה {level} · {name}',
   'rank.toNext': '{xp} XP לדרגה {level} · {name}',
   'rank.top': 'הדרגה העליונה',
@@ -83,7 +84,7 @@ const he = {
   'rank.4': 'מפתח',
   'rank.5': 'מומחה',
 
-  // כותרות פרקים (מ-codeSplitter)
+  // Chapter titles (from codeSplitter)
   'title.markup': 'מבנה העמוד',
   'title.css': 'עיצוב: {selector}',
   'title.cssMore': 'עיצוב: {selector} ועוד {count} כללים',
@@ -93,7 +94,7 @@ const he = {
   'title.extraOne': ' ועוד יחידה אחת',
   'title.extraMany': ' ועוד {count} יחידות',
 
-  // בית — איך זה עובד
+  // Home: how it works
   'how.title': 'איך זה עובד',
   'how.1.title': 'מתארים',
   'how.1.text': 'כותבים במילים מה רוצים לבנות. משחק, כלי, מה שבא.',
@@ -104,19 +105,19 @@ const he = {
   'home.created': 'נוצר {date}',
   'home.chapters': '{count} פרקים',
 
-  // בנייה
+  // Build
   'project.elapsed': '{seconds} שניות עברו',
   'project.tip.1': 'בינתיים: המודל כותב HTML, CSS ו-JavaScript בקובץ אחד.',
   'project.tip.2': 'כשיסיים, הקוד יתפצל אוטומטית לפרקי למידה.',
   'project.tip.3': 'הפרק הראשון יהיה תמיד המבנה של העמוד — הכי קל להתחיל ממנו.',
 
-  // מפה
+  // Study map
   'study.summary.points': 'נקודות',
   'study.summary.firstTry': 'מהניסיון הראשון',
   'study.summary.left': 'פרקים נותרו',
   'study.xpReward': '+{xp} XP',
 
-  // פרק
+  // Chapter
   'chapter.step.concept': 'עיקרון',
   'chapter.step.exercise': 'תרגיל',
   'chapter.step.done': 'סיום',
@@ -127,7 +128,7 @@ const he = {
   'toast.topRank': 'הדרגה העליונה — כל הכבוד',
   'toast.downloaded': 'הקובץ ירד',
 
-  // המשך עבודה על הפרויקט
+  // Revisions
   'revise.open': 'להמשיך לעבוד',
   'revise.title': 'מה לשנות?',
   'revise.placeholder': 'לדוגמה: תגדילו את הכפתורים, תוסיפו טיימר, תשנו את הצבע לכחול',
@@ -135,7 +136,6 @@ const he = {
   'revise.working': 'המודל משכתב את הפרויקט. בערך שתי דקות.',
   'revise.applied': 'הוחל',
   'revise.failed': 'נכשל',
-  'revise.interrupted': 'השינוי נקטע כשהדף נטען מחדש.',
   'revise.undo': 'חזרה לגרסה הקודמת',
   'revise.version': 'גרסה {n}',
   'revise.empty': 'עדיין לא ביקשתם שינויים. כותבים כאן מה לשפר, כמו שמדברים עם מפתח.',
@@ -144,7 +144,7 @@ const he = {
   'toast.revisedDetail': '{count} פרקים במפה',
   'toast.reverted': 'חזרתם לגרסה הקודמת',
 
-  // שגיאות
+  // Errors
   'error.ollamaUnreachable': 'אין תשובה מ-Ollama. כדאי לוודא שהוא רץ ושהמודל מותקן.',
   'error.ollamaHttp': 'Ollama החזיר שגיאה {status}.',
   'error.ollamaFormat': 'התשובה מ-Ollama אינה בפורמט המצופה.',
@@ -270,7 +270,6 @@ const en: Record<StringKey, string> = {
   'revise.working': 'The model is rewriting the project. About two minutes.',
   'revise.applied': 'Applied',
   'revise.failed': 'Failed',
-  'revise.interrupted': 'The change was interrupted when the page reloaded.',
   'revise.undo': 'Back to previous version',
   'revise.version': 'Version {n}',
   'revise.empty': 'No changes requested yet. Write what to improve, like talking to a developer.',
@@ -292,7 +291,7 @@ export const STRINGS: Record<Language, Record<StringKey, string>> = { he, en }
 
 export type Vars = Record<string, string | number>
 
-/** תרגום עם החלפת משתנים: "{n} מתוך {total}". */
+/** Translates a key, substituting `{name}` placeholders. */
 export function translate(language: Language, key: StringKey, vars?: Vars): string {
   let text: string = STRINGS[language][key]
   if (vars) {

@@ -3,8 +3,8 @@ import { BuildError } from '../services/projectBuilder'
 import { translate, type Language } from './strings'
 
 /**
- * הודעת שגיאה לתצוגה, בשפת המשתמש.
- * שגיאות עם קוד מתורגמות; שגיאה זרה מציגה את הטקסט שלה כפי שהוא.
+ * User-facing error message in the current language. Coded errors are
+ * localized; unknown errors fall back to their own message.
  */
 export function errorMessage(language: Language, error: unknown): string {
   if (error instanceof OllamaError) {
@@ -19,8 +19,8 @@ export function errorMessage(language: Language, error: unknown): string {
   return translate(language, 'error.unknown')
 }
 
-/** הודעה של שינוי שנשמר: קוד 'interrupted' מתורגם, טקסט אחר מוצג כפי שהוא. */
-export function revisionMessage(language: Language, message: string | null): string | null {
-  if (message === 'interrupted') return translate(language, 'revise.interrupted')
+/** Message persisted with a project or revision; the 'interrupted' code is localized. */
+export function storedMessage(language: Language, message: string | null): string | null {
+  if (message === 'interrupted') return translate(language, 'error.interrupted')
   return message
 }

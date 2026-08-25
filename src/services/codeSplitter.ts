@@ -1,19 +1,20 @@
 import type { Chapter, ChapterTitle } from '../state/types'
 
 /**
- * codeSplitter — קוד HTML שלם נכנס, פרקי למידה יוצאים.
+ * codeSplitter: a complete single-file HTML app in, learning chapters out.
  *
- * קוד רגיל בלבד, ללא מודל. מיידי, דטרמיניסטי וניתן לבדיקה אוטומטית — ראה ADR-005.
- * גבול הפרק נקבע ב-ADR-008: אזורי הקובץ כשלד, ובתוכם יחידות בעלות שם.
+ * Deterministic and model-free, so it is instant and unit-testable. The file's
+ * zones (markup, CSS, JavaScript) form the skeleton; within each zone, named
+ * units (functions, CSS rules) become chapters.
  */
 
-/** גודל היעד של פרק שנוצר מקיבוץ יחידות קטנות. */
+/** Target size when grouping small units into one chapter. */
 export const CHAPTER_TARGET_CHARS = 800
 
-/** פרק קצר מזה אינו עומד בפני עצמו, ומתמזג לשכנו. */
+/** Chapters shorter than this cannot stand alone and are merged into a neighbour. */
 export const MIN_CHAPTER_CHARS = 150
 
-/** תקרה רכה. פונקציות לעולם אינן מתמזגות, ולכן פרויקט עתיר פונקציות עשוי לחרוג. */
+/** Soft cap. Functions are never merged, so function-heavy projects may exceed it. */
 export const MAX_CHAPTERS = 12
 
 interface Piece {
@@ -29,7 +30,7 @@ export function splitCode(html: string): Chapter[] {
   let target = CHAPTER_TARGET_CHARS
   let pieces = buildPieces(markup, css, js, target)
 
-  // אם יצאו יותר מדי פרקים, מגדילים את גודל היעד ומקבצים מחדש.
+  // Too many chapters: raise the grouping target and regroup.
   for (let attempt = 0; attempt < 4 && pieces.length > MAX_CHAPTERS; attempt++) {
     target = Math.ceil(target * (pieces.length / MAX_CHAPTERS))
     pieces = buildPieces(markup, css, js, target)
@@ -54,9 +55,9 @@ function buildPieces(markup: string, css: string, js: string, target: number): M
   return mergeTiny(pieces)
 }
 
-// ---------- אזורים ----------
+// ---------- Zones ----------
 
-/** מחזיר את התוכן של כל התגיות מסוג אחד, מחובר יחד. */
+/** Concatenated content of every tag of the given kind. */
 export function extractTagContent(html: string, tag: 'style' | 'script'): string {
   const pattern = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, 'gi')
   const parts: string[] = []
@@ -67,7 +68,7 @@ export function extractTagContent(html: string, tag: 'style' | 'script'): string
   return parts.join('\n\n')
 }
 
-/** תוכן ה-body ללא בלוקים של עיצוב והתנהגות. */
+/** Body content with style and script blocks removed. */
 export function extractMarkup(html: string): string {
   const body = /<body\b[^>]*>([\s\S]*?)<\/body>/i.exec(html)
   const source = body ? body[1] : html
@@ -85,7 +86,7 @@ interface CssRule {
   code: string
 }
 
-/** מפצל גיליון סגנונות לכללים ברמה העליונה. כלל @media נשאר שלם. */
+/** Splits a stylesheet into top-level rules. Nested rules such as @media stay intact. */
 export function splitCssRules(css: string): CssRule[] {
   const rules: CssRule[] = []
   let depth = 0
@@ -125,7 +126,7 @@ export function splitCssRules(css: string): CssRule[] {
 
 function selectorOf(rule: string): string {
   const head = rule.slice(0, rule.indexOf('{'))
-  // הערה שקדמה לכלל נשמרת בקוד הפרק, אך אינה חלק מהבורר.
+  // A comment preceding the rule stays in the chapter code but is not part of the selector.
   return head
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\s+/g, ' ')
@@ -149,15 +150,15 @@ function cssTitle(group: CssRule[]): ChapterTitle {
 // ---------- JavaScript ----------
 
 interface JsUnit {
-  /** שם הפונקציה, אם היחידה היא הגדרת פונקציה. */
+  /** Function name when the unit is a function definition. */
   name: string | null
   code: string
 }
 
 /**
- * מפצל קוד לפקודות ברמה העליונה.
- * מטפל בהערות, במחרוזות ובמחרוזות תבנית עם אינטרפולציה — שלושתם מכילים
- * תווים שנראים כמו גבול פקודה ואינם כאלה.
+ * Splits JavaScript into top-level statements. Tracks comments, strings and
+ * template literals with interpolation, since all three contain characters
+ * that look like statement boundaries but are not.
  */
 export function splitJsUnits(js: string): JsUnit[] {
   const units: JsUnit[] = []
@@ -165,7 +166,7 @@ export function splitJsUnits(js: string): JsUnit[] {
   let braces = 0
   let parens = 0
   let mode: 'code' | 'line' | 'block' | 'single' | 'double' | 'template' = 'code'
-  /** עומק הסוגריים שבו נפתחה כל אינטרפולציה פתוחה. */
+  /** Brace depth at which each open template interpolation started. */
   const interpolations: number[] = []
   let i = 0
 
@@ -267,7 +268,7 @@ function skipTrailingSemicolon(js: string, from: number): number {
   return i < js.length && js[i] === ';' ? i + 1 : from
 }
 
-/** מזהה הגדרת פונקציה, בין אם בהצהרה ובין אם בהשמה לקבוע. */
+/** Detects a function definition, either a declaration or an assignment to a binding. */
 function functionName(code: string): string | null {
   const declaration = /^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/.exec(code)
   if (declaration) return declaration[1]
@@ -311,9 +312,9 @@ function jsPieces(js: string, target: number): Piece[] {
   return pieces
 }
 
-// ---------- כלים משותפים ----------
+// ---------- Shared helpers ----------
 
-/** מקבץ פריטים עוקבים עד שהגודל המצטבר מגיע ליעד. הסדר נשמר. */
+/** Groups consecutive items until the accumulated size reaches the target. Order is preserved. */
 function groupByTarget<T>(items: T[], target: number, sizeOf: (item: T) => string): T[][] {
   const groups: T[][] = []
   let current: T[] = []
@@ -334,14 +335,14 @@ function groupByTarget<T>(items: T[], target: number, sizeOf: (item: T) => strin
 }
 
 interface MergedPiece extends Piece {
-  /** יחידות שנבלעו. הכותרת המוצגת מצהירה עליהן — ראה formatChapterTitle. */
+  /** Units absorbed into this piece. Surfaced in the displayed title. */
   extraUnits: number
 }
 
 /**
- * פרק קצר מדי מתמזג לשכן, כדי שלא ייווצר פרק שאין עליו מה לשאול.
- * פרק שבלע יחידות חייב להצהיר על כך בכותרת, אחרת המשתמש יקבל
- * שאלה על קוד שהכותרת לא הבטיחה.
+ * Merges pieces that are too short to carry a lesson into a neighbour.
+ * The count of absorbed units is kept so the chapter title can declare them;
+ * otherwise the learner would be quizzed on code the title never mentioned.
  */
 function mergeTiny(pieces: Piece[]): MergedPiece[] {
   const merged: MergedPiece[] = []
@@ -357,7 +358,7 @@ function mergeTiny(pieces: Piece[]): MergedPiece[] {
     }
   }
 
-  // אם הפרק הראשון היה קצר ולא היה לו שכן קודם, הוא מתמזג קדימה.
+  // A short first piece has no previous neighbour; merge it forward instead.
   if (merged.length > 1 && merged[0].code.length < MIN_CHAPTER_CHARS) {
     merged[1].code = `${merged[0].code}\n\n${merged[1].code}`
     merged[1].extraUnits++

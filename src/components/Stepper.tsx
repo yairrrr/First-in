@@ -1,6 +1,6 @@
 import { Icon } from './Icon'
 
-/** חיווי "איפה אני בשיעור": עיקרון ← תרגיל ← סיום. */
+/** Lesson progress indicator: concept → exercise → done. */
 export function Stepper({ steps, current }: { steps: string[]; current: number }) {
   return (
     <ol className="stepper" aria-label={steps[current]}>

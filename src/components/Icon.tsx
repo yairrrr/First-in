@@ -1,7 +1,6 @@
 /**
- * סט אייקונים אחד, ב-SVG inline, בלי ספרייה.
- * קו אחיד של 2px, פינות עגולות, 24×24 — כך כל האייקונים נראים מאותה משפחה.
- * אייקוני כיוון (forward/back) מתהפכים אוטומטית ב-RTL דרך CSS.
+ * Inline SVG icon set. Uniform 2px stroke, round joins, 24×24 viewBox.
+ * Directional icons (forward/back) are mirrored in RTL via CSS.
  */
 
 export type IconName =

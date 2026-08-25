@@ -8,7 +8,7 @@ import { Icon } from '../components/Icon'
 import type { Project } from '../state/types'
 import logoMark from '../assets/logo-mark.png'
 
-/** רשימת הפרויקטים, ונקודת הכניסה: פרומפט חופשי. */
+/** Home: the build form and the project list. */
 export function ProjectsPage() {
   const { state } = useApp()
   const { startProject, deleteProject } = useProjectActions()
@@ -65,7 +65,7 @@ export function ProjectsPage() {
         </div>
       </form>
 
-      {/* פעם ראשונה כאן: שלושה צעדים במקום רשימה ריקה */}
+      {/* First visit: a three-step overview instead of an empty list */}
       {isEmpty ? (
         <div className="how">
           <h2>{t('how.title')}</h2>
@@ -126,7 +126,7 @@ export function ProjectsPage() {
                   title={t('home.delete')}
                   aria-label={t('home.delete')}
                   onClick={() => {
-                    // בנייה עולה שתי דקות. מחיקה בטעות לא צריכה להיות בלחיצה אחת.
+                    // A build costs about two minutes; deletion should not be a single click.
                     if (window.confirm(t('home.deleteConfirm'))) deleteProject(project.id)
                   }}
                 >
@@ -141,12 +141,12 @@ export function ProjectsPage() {
   )
 }
 
-/** לתמונה המוקטנת מספיק המבנה והעיצוב. הסקריפטים מוסרים, כדי שלא ייחסמו ברעש בקונסול. */
+/** Thumbnails only need markup and styles; scripts are stripped so the sandbox does not log blocked executions. */
 function staticSnapshot(code: string): string {
   return code.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
 }
 
-/** תצוגה חיה ומוקטנת של הפרויקט — הקוד האמיתי, בלי סקריפטים ובלי אינטראקציה. */
+/** Scaled-down static render of the project's own HTML, non-interactive. */
 function ProjectThumb({ project }: { project: Project }) {
   if (project.status !== 'ready') {
     return (

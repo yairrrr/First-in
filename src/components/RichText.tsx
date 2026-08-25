@@ -1,7 +1,4 @@
-/**
- * טקסט מהמודל שמכיל קטעי קוד בגרשיים הפוכים (`כך`).
- * הקטעים מוצגים כקוד מודגש בתוך השורה, ולא כטקסט רגיל.
- */
+/** Renders model text with backtick spans as inline code. */
 export function RichText({ text }: { text: string }) {
   const parts = text.split('`')
   return (

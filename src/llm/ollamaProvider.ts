@@ -1,23 +1,22 @@
 import type { LlmProvider, LlmRequest, LlmResponse } from './types'
 
-/** Ollama רץ מקומית ואינו דורש מפתח. אומת ב-SPIKE-002 שהדפדפן רשאי לפנות אליו. */
+/** Default local Ollama endpoint. Ollama permits browser requests from localhost origins. */
 export const OLLAMA_BASE_URL = 'http://localhost:11434'
 
-/** נבחר ב-ADR-002. */
 export const OLLAMA_MODEL = 'gemma4:12b'
 
 export interface OllamaOptions {
   baseUrl?: string
   model?: string
-  /** מוזרק בבדיקות, כדי שלא נדבר עם שרת אמיתי. */
+  /** Injected in tests to avoid real network calls. */
   fetchImpl?: typeof fetch
 }
 
 export type OllamaErrorCode = 'unreachable' | 'http' | 'format'
 
 /**
- * נזרקת כשהמודל לא זמין או החזיר תשובה שאי אפשר לקרוא.
- * נושאת קוד ולא טקסט לתצוגה — הממשק מתרגם לפי הקוד לשפת המשתמש.
+ * Thrown when the model is unreachable or returns an unreadable response.
+ * Carries a code rather than display text; the UI localizes it.
  */
 export class OllamaError extends Error {
   readonly code: OllamaErrorCode
@@ -40,16 +39,15 @@ export function createOllamaProvider(options: OllamaOptions = {}): LlmProvider {
     name: `ollama:${model}`,
 
     async complete(request: LlmRequest): Promise<LlmResponse> {
-      // ה-MVP אינו משתמש בשידור — ראה ADR-004. הממשק מאפשר להוסיפו בלי לשנות חוזה.
       const body = {
         model,
         prompt: request.prompt,
         system: request.system,
         stream: false,
-        // gemma4 הוא מודל חושב. בלי לכבות את זה, החשיבה בולעת את התשובה —
-        // דקות של עבודה ואז response ריק. אומת ב-SPIKE-004.
+        // gemma4 is a reasoning model. With thinking enabled it can spend its
+        // whole budget on the hidden reasoning and return an empty response.
         think: false,
-        // סכמה מלאה במקום 'json': המודל מאולץ לצורה הנכונה, לא רק ל-JSON כלשהו.
+        // A full JSON schema (not just 'json') constrains the model to the exact shape.
         ...(request.schema ? { format: request.schema } : {}),
       }
 

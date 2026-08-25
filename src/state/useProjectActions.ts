@@ -10,21 +10,20 @@ import { chapterTitleText } from '../i18n/chapterTitle'
 import { errorMessage } from '../i18n/errorMessage'
 import type { Action, Chapter, Language, Project } from './types'
 
-/**
- * העבודה האסינכרונית יושבת כאן ולא ב-reducer.
- * ה-reducer נשאר פונקציה טהורה, ולכן אפשר לבדוק אותו בלי מודל ובלי רשת.
- */
-/** בקשות שיעור שרצות כרגע. מודול-גלובלי, כדי לשרוד רכיבים שנהרסים ונבנים. */
+// Asynchronous work lives here, not in the reducer, so the reducer stays pure
+// and testable without a model or network.
+
+/** Lesson requests currently in flight. Module-level so it survives remounts. */
 const inFlightLessons = new Set<string>()
 
 /**
- * הפרק שכדאי להטעין מראש — אחד בדיוק, ולא שרשרת:
- * בלי נקודת מוצא — הפרק הראשון שטרם הושלם, ורק אם עוד אין לו שיעור.
- * עם נקודת מוצא — הפרק הצמוד שאחריה בלבד, באותו תנאי.
+ * The single chapter worth prefetching, or null.
+ * Without an anchor: the first incomplete chapter, if it has no lesson yet.
+ * With an anchor: only the chapter immediately after it, under the same condition.
  *
- * הצמצום מכוון: מועמד שכבר יש לו שיעור מחזיר null ולא ממשיך הלאה,
- * אחרת כל שיעור שנטען היה מצית את הבא, וכל הפרויקט היה נוצר ברקע —
- * בניגוד ל-ADR-005.
+ * Deliberately narrow: a candidate that already has a lesson yields null instead
+ * of searching further, otherwise each loaded lesson would trigger the next and
+ * the whole project would be generated in the background.
  */
 export function nextChapterToPrefetch(project: Project, afterChapterId?: string): Chapter | null {
   let candidate: Chapter | undefined
@@ -44,7 +43,7 @@ export function useProjectActions() {
   const xp = state.xp
   const language = state.language
 
-  /** פותח פרויקט מיד, ומריץ את הבנייה ברקע. מחזיר את המזהה כדי שאפשר יהיה לנווט אליו. */
+  /** Creates the project immediately and builds in the background. Returns the id for navigation. */
   const startProject = useCallback(
     (prompt: string, kind: ProviderKind): string => {
       const project: Project = {
@@ -69,22 +68,22 @@ export function useProjectActions() {
   )
 
   /**
-   * יוצר את השיעור של פרק, אם עוד אין לו.
-   * נקרא כשהמשתמש פותח פרק — לא מראש, ראה ADR-005.
+   * Generates the chapter's lesson if it does not exist yet.
+   * Called when the learner opens a chapter, not ahead of time.
    */
   const loadLesson = useCallback(
     async (project: Project, chapter: Chapter): Promise<string | null> => {
       if (chapter.lesson) return null
 
-      // StrictMode מריץ effects פעמיים בפיתוח. בלי ההגנה הזו כל כניסה לפרק
-      // הייתה שולחת למודל שתי בקשות של רבע דקה במקום אחת.
+      // React StrictMode runs effects twice in development; without this guard
+      // every chapter visit would issue two model requests.
       const key = `${project.id}/${chapter.id}`
       if (inFlightLessons.has(key)) return null
       inFlightLessons.add(key)
 
       try {
-        // הקושי נקבע ברגע יצירת השיעור, לפי דרגת המשתמש באותו רגע.
-        // שיעור שנשמר שומר את הרמה שבה נוצר.
+        // Difficulty is fixed at generation time from the learner's current rank
+        // and stored with the lesson.
         const difficulty = rankForXp(xp).difficulty
         const chapterIndex = project.chapters.findIndex((c) => c.id === chapter.id)
         const lesson = await generateLesson(createProvider(project.provider, language), {
@@ -112,7 +111,7 @@ export function useProjectActions() {
     [dispatch],
   )
 
-  /** בנייה מחדש של פרויקט שנכשל, עם אותו פרומפט ואותו ספק. */
+  /** Rebuilds a failed project with the same prompt and provider. */
   const retryBuild = useCallback(
     (project: Project) => {
       dispatch({ type: 'BUILD_STARTED', projectId: project.id })
@@ -129,8 +128,8 @@ export function useProjectActions() {
   )
 
   /**
-   * הערה על הפרויקט: "תגדיל את הכפתורים". המודל משכתב את הקובץ,
-   * הפרקים מתחלקים מחדש, וההתקדמות על פרקים שלא השתנו נשמרת.
+   * Applies a free-text instruction to a built project. The model rewrites the
+   * file, chapters are re-split, and progress on unchanged chapters is kept.
    */
   const reviseProjectWith = useCallback(
     (project: Project, instruction: string) => {
@@ -165,7 +164,7 @@ export function useProjectActions() {
     [dispatch, language],
   )
 
-  /** חזרה לגרסה הקודמת: הקוד והפרקים חוזרים מתמונת המצב השמורה. */
+  /** Restores the previous version (code and chapters) from the stored snapshot. */
   const revertRevision = useCallback(
     (project: Project) => {
       if (project.previousVersions.length === 0) return

@@ -2,10 +2,11 @@ import type { LlmProvider } from '../llm/types'
 import { stripCodeFence } from './stripCodeFence'
 
 /**
- * projectBuilder — פרומפט של המשתמש נכנס, קוד HTML שלם יוצא.
+ * projectBuilder: the user's prompt in, a complete HTML file out.
  *
- * הבקשה מנוסחת כך שהפלט יהיה קובץ אחד עצמאי, מהסיבה שבסעיף 7 ב-PRD:
- * ה-MVP רץ בדפדפן בלבד, ואין לו מערכת קבצים שתחזיק כמה קבצים.
+ * Output is a single self-contained file because the app runs entirely in the
+ * browser with no file system; one file is the unit the preview and the
+ * chapter splitter both understand.
  */
 
 export const BUILD_SYSTEM_PROMPT = [
@@ -17,7 +18,7 @@ export const BUILD_SYSTEM_PROMPT = [
 
 export type BuildErrorCode = 'emptyPrompt' | 'notHtml'
 
-/** נזרקת על קלט ריק או כשהמודל החזיר משהו שאינו מסמך HTML. נושאת קוד לתרגום. */
+/** Thrown on empty input or when the model returns something that is not an HTML document. */
 export class BuildError extends Error {
   readonly code: BuildErrorCode
 
@@ -46,9 +47,8 @@ export async function buildProject(provider: LlmProvider, prompt: string): Promi
 }
 
 /**
- * בדיקת שפיות ולא ולידציה מלאה.
- * המטרה היחידה: לתפוס מקרה שבו המודל החזיר טקסט חופשי במקום קוד,
- * לפני שנפתח לו iframe ונציג למשתמש דף לבן.
+ * Sanity check, not full validation: catches the model answering with prose
+ * instead of code before it is rendered as a blank iframe.
  */
 export function looksLikeHtml(text: string): boolean {
   const head = text.trimStart().slice(0, 200).toLowerCase()

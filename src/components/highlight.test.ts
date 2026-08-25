@@ -5,7 +5,7 @@ const joined = (code: string, lang: 'html' | 'css' | 'js') =>
   highlight(code, lang).map((t) => t.text).join('')
 
 describe('highlight', () => {
-  it('שומר את הטקסט המקורי בדיוק, בכל שפה', () => {
+  it('preserves the original text exactly in every language', () => {
     const js = 'const x = "a;b"; // note\nfunction go() { return x }'
     const css = 'body { color: white; }\n@media (max-width: 600px) { .a { margin: 0 } }'
     const html = '<button onclick="resetGame()">Restart</button><!-- c -->'
@@ -14,7 +14,7 @@ describe('highlight', () => {
     expect(joined(html, 'html')).toBe(html)
   })
 
-  it('JS: מילות מפתח, מחרוזות, מספרים, פונקציות והערות', () => {
+  it('JS: keywords, strings, numbers, functions and comments', () => {
     const tokens = highlight('const n = 3; // hi\nflip("a")', 'js')
     const by = (type: string) => tokens.filter((t) => t.type === type).map((t) => t.text)
     expect(by('keyword')).toEqual(['const'])
@@ -24,12 +24,12 @@ describe('highlight', () => {
     expect(by('string')).toEqual(['"a"'])
   })
 
-  it('JS: נקודה-פסיק בתוך מחרוזת אינה פיסוק', () => {
+  it('JS: a semicolon inside a string is not punctuation', () => {
     const tokens = highlight('let s = "a;b";', 'js')
     expect(tokens.find((t) => t.type === 'string')?.text).toBe('"a;b"')
   })
 
-  it('CSS: בורר, מאפיין, ערך מספרי וצבע', () => {
+  it('CSS: selector, property, numeric value and color', () => {
     const tokens = highlight('.card { width: 80px; color: #333; }', 'css')
     const by = (type: string) => tokens.filter((t) => t.type === type).map((t) => t.text)
     expect(by('selector')).toEqual(['.card '])
@@ -37,10 +37,10 @@ describe('highlight', () => {
     expect(by('number')).toEqual(['80px', '#333'])
   })
 
-  it('HTML: תגיות, מאפיינים ומחרוזות', () => {
+  it('HTML: tags, attributes and strings', () => {
     const tokens = highlight('<div class="grid" id=\'g\'>hi</div>', 'html')
     const by = (type: string) => tokens.filter((t) => t.type === type).map((t) => t.text)
-    // תגית סוגרת מתאחדת לטוקן אחד, כי אין בה מאפיינים באמצע
+    // A closing tag merges into one token because it has no attributes
     expect(by('tag')).toEqual(['<div', '>', '</div>'])
     expect(by('attr')).toEqual(['class', 'id'])
     expect(by('string')).toEqual(['"grid"', "'g'"])

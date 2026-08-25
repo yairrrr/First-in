@@ -1,4 +1,4 @@
-/** טבעת התקדמות ב-SVG. הצבע מהגרדיאנט של המותג, הרקע קו דק. */
+/** SVG progress ring with the brand gradient. */
 export function ProgressRing({
   percent,
   size = 84,

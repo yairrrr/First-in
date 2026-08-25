@@ -1,7 +1,9 @@
 {
   "name": "first-in",
-  "private": true,
   "version": "0.1.0",
+  "description": "Build an app from a prompt, then learn the code you built — a local-model learning environment.",
+  "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

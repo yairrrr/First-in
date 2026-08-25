@@ -6,15 +6,12 @@ import { splitCode } from './codeSplitter'
 import { looksLikeHtml } from './projectBuilder'
 
 /**
- * בדיקת אינטגרציה מול Ollama אמיתי. מדלגת על עצמה ב-`npm test`,
- * כי היא לוקחת כשתי דקות ותלויה בשרת חיצוני.
- * להרצה: `npm run test:e2e`, ובתנאי ש-Ollama רץ והמודל מותקן.
- *
- * הבדיקות הרגילות משתמשות בספק שמור, כי אי אפשר לבדוק קוד
- * שמדבר עם מודל שמחזיר כל פעם משהו אחר.
+ * Integration test against a live Ollama instance. Skipped by `npm test`
+ * because it takes about a minute and depends on an external process.
+ * Run with `npm run test:e2e` while Ollama is running with the model pulled.
  */
-describe.skipIf(!process.env.FIRST_IN_E2E)('הנתיב המלא מול המודל המקומי', () => {
-  it('פרומפט נכנס, קוד עובד יוצא, ופרקים מתפצלים ממנו', { timeout: 600_000 }, async () => {
+describe.skipIf(!process.env.FIRST_IN_E2E)('full pipeline against the local model', () => {
+  it('builds working code from a prompt and splits it into chapters', { timeout: 600_000 }, async () => {
     const provider = createOllamaProvider()
 
     const html = await buildProject(

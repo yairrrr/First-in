@@ -14,9 +14,11 @@ function fakeStorage(initial: string | null = null): StateStorage & { value: str
   }
 }
 
+const empty: AppState = { projects: [], xp: 0, language: 'he' }
+
 const readyProject = {
   id: 'p1',
-  prompt: 'משחק זיכרון',
+  prompt: 'memory game',
   provider: 'fixture',
   status: 'ready',
   code: '<html></html>',
@@ -33,48 +35,48 @@ const readyProject = {
   createdAt: '2026-08-20T10:00:00.000Z',
 }
 
-describe('saveState ו-loadState', () => {
-  it('מחזירים את אותו מצב הלוך ושוב', () => {
+describe('saveState / loadState', () => {
+  it('round-trips state', () => {
     const storage = fakeStorage()
-    const state: AppState = { projects: [readyProject], xp: 0, language: 'he' } as AppState
+    const state = { projects: [readyProject], xp: 0, language: 'he' } as AppState
 
     saveState(storage, state)
     expect(loadState(storage)).toEqual(state)
   })
 
-  it('שומרים תחת מפתח שנושא מספר גרסה', () => {
+  it('writes under the versioned key', () => {
     const storage = fakeStorage()
     let key = ''
-    saveState({ getItem: () => null, setItem: (k) => (key = k) }, { projects: [], xp: 0, language: 'he' })
+    saveState({ getItem: () => null, setItem: (k) => (key = k) }, empty)
     expect(key).toBe(STORAGE_KEY)
     expect(storage.value).toBeNull()
   })
 
-  it('מצב ריק כשאין מה לטעון', () => {
-    expect(loadState(fakeStorage())).toEqual({ projects: [], xp: 0, language: 'he' })
-    expect(loadState(undefined)).toEqual({ projects: [], xp: 0, language: 'he' })
+  it('returns empty state when nothing is stored', () => {
+    expect(loadState(fakeStorage())).toEqual(empty)
+    expect(loadState(undefined)).toEqual(empty)
   })
 
-  it('שורדים מידע פגום ולא מפילים את האפליקציה', () => {
-    expect(loadState(fakeStorage('לא JSON'))).toEqual({ projects: [], xp: 0, language: 'he' })
-    expect(loadState(fakeStorage('{"projects": "not an array"}'))).toEqual({ projects: [], xp: 0, language: 'he' })
+  it('survives corrupt data', () => {
+    expect(loadState(fakeStorage('not json'))).toEqual(empty)
+    expect(loadState(fakeStorage('{"projects": "not an array"}'))).toEqual(empty)
   })
 
-  it('זורקים פרויקט פגום ושומרים את התקינים', () => {
+  it('drops a corrupt project and keeps valid ones', () => {
     const storage = fakeStorage(JSON.stringify({ projects: [{ nonsense: true }, readyProject] }))
     expect(loadState(storage).projects.map((p) => p.id)).toEqual(['p1'])
   })
 
-  it('בנייה שנקטעה ברענון נטענת ככישלון ולא כבנייה נצחית', () => {
+  it('loads an interrupted build as failed rather than building forever', () => {
     const building = { ...readyProject, status: 'building', code: '', chapters: [] }
     const storage = fakeStorage(JSON.stringify({ projects: [building] }))
 
     const loaded = loadState(storage).projects[0]
     expect(loaded.status).toBe('failed')
-    expect(loaded.error).toContain('נקטעה')
+    expect(loaded.error).toBe('interrupted')
   })
 
-  it('שורדים אחסון שחוסם קריאה או כתיבה', () => {
+  it('tolerates storage that throws on read or write', () => {
     const blocked: StateStorage = {
       getItem() {
         throw new Error('blocked')
@@ -83,17 +85,17 @@ describe('saveState ו-loadState', () => {
         throw new Error('blocked')
       },
     }
-    expect(loadState(blocked)).toEqual({ projects: [], xp: 0, language: 'he' })
-    expect(() => saveState(blocked, { projects: [], xp: 0, language: 'he' })).not.toThrow()
+    expect(loadState(blocked)).toEqual(empty)
+    expect(() => saveState(blocked, empty)).not.toThrow()
   })
 })
 
-describe('טעינת שיעורים שמורים', () => {
+describe('stored lessons', () => {
   const lesson = {
     difficulty: 'core',
-    concept: 'עיקרון',
+    concept: 'concept',
     example: 'x = 1',
-    exercise: { kind: 'choice', question: 'שאלה?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 1 },
+    exercise: { kind: 'choice', question: 'q?', options: ['a', 'b', 'c', 'd'], correctIndex: 1 },
   }
 
   function storedWith(chapterExtras: Record<string, unknown>) {
@@ -109,79 +111,79 @@ describe('טעינת שיעורים שמורים', () => {
     )
   }
 
-  it('שיעור תקין נטען יחד עם מספר הניסיונות', () => {
+  it('loads a valid lesson together with the attempt count', () => {
     const chapter = loadState(storedWith({ lesson, attempts: 3 })).projects[0].chapters[0]
     expect(chapter.lesson).toEqual(lesson)
     expect(chapter.attempts).toBe(3)
   })
 
-  it('שיעור פגום נזרק, והפרק עצמו שורד', () => {
+  it('drops a corrupt lesson but keeps the chapter', () => {
     const broken = {
       ...lesson,
-      exercise: { kind: 'choice', question: 'ש?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 9 },
+      exercise: { kind: 'choice', question: 'q?', options: ['a', 'b', 'c', 'd'], correctIndex: 9 },
     }
     const chapter = loadState(storedWith({ lesson: broken })).projects[0].chapters[0]
     expect(chapter.lesson).toBeNull()
     expect(chapter.id).toBe('ch-1')
   })
 
-  it('שיעור הרכבה שמור נטען, כולל המשבצות', () => {
+  it('loads an assemble lesson including its tokens', () => {
     const assemble = {
       difficulty: 'intro',
-      concept: 'עיקרון',
+      concept: 'concept',
       example: 'x',
-      exercise: { kind: 'assemble', instruction: 'הרכב', tokens: ['a', 'b', 'c'] },
+      exercise: { kind: 'assemble', instruction: 'assemble', tokens: ['a', 'b', 'c'] },
     }
     const chapter = loadState(storedWith({ lesson: assemble })).projects[0].chapters[0]
     expect(chapter.lesson?.exercise.kind).toBe('assemble')
   })
 
-  it('שיעור בפורמט הישן נזרק בשקט וייווצר מחדש', () => {
-    const v1 = {
-      explanation: 'הסבר ישן',
-      question: { text: 'ש?', options: ['א', 'ב', 'ג', 'ד'], correctIndex: 1 },
+  it('drops a lesson in the legacy format', () => {
+    const legacy = {
+      explanation: 'old explanation',
+      question: { text: 'q?', options: ['a', 'b', 'c', 'd'], correctIndex: 1 },
     }
-    const chapter = loadState(storedWith({ lesson: v1 })).projects[0].chapters[0]
+    const chapter = loadState(storedWith({ lesson: legacy })).projects[0].chapters[0]
     expect(chapter.lesson).toBeNull()
   })
 })
 
-describe('XP גלובלי', () => {
-  it('נשמר ונטען', () => {
+describe('global XP', () => {
+  it('round-trips', () => {
     const storage = fakeStorage()
-    saveState(storage, { projects: [], xp: 135, language: 'he' })
+    saveState(storage, { ...empty, xp: 135 })
     expect(loadState(storage).xp).toBe(135)
   })
 
-  it('מצב ישן בלי XP, או XP פגום, נטען עם אפס', () => {
+  it('defaults to zero for missing or invalid values', () => {
     expect(loadState(fakeStorage('{"projects": []}')).xp).toBe(0)
-    expect(loadState(fakeStorage('{"projects": [], "xp": "הרבה"}')).xp).toBe(0)
+    expect(loadState(fakeStorage('{"projects": [], "xp": "many"}')).xp).toBe(0)
     expect(loadState(fakeStorage('{"projects": [], "xp": -5}')).xp).toBe(0)
   })
 })
 
-describe('שפה וכותרות', () => {
-  it('שפה נשמרת ונטענת, וברירת המחדל עברית', () => {
+describe('language and titles', () => {
+  it('round-trips the language and defaults to Hebrew', () => {
     const storage = fakeStorage()
-    saveState(storage, { projects: [], xp: 0, language: 'en' })
+    saveState(storage, { ...empty, language: 'en' })
     expect(loadState(storage).language).toBe('en')
     expect(loadState(fakeStorage('{"projects": []}')).language).toBe('he')
   })
 
-  it('פרק עם כותרת בפורמט הישן (מחרוזת) נזרק', () => {
-    const old = { ...readyProject, chapters: [{ id: 'x', title: 'טקסט', code: 'c', completed: false }] }
-    const storage = fakeStorage(JSON.stringify({ projects: [old] }))
+  it('drops chapters with legacy string titles', () => {
+    const legacy = { ...readyProject, chapters: [{ id: 'x', title: 'text', code: 'c', completed: false }] }
+    const storage = fakeStorage(JSON.stringify({ projects: [legacy] }))
     expect(loadState(storage).projects[0].chapters).toHaveLength(0)
   })
 })
 
-describe('שינויים וגרסאות שמורות', () => {
-  it('היסטוריית שינויים ותמונת גרסה נטענות; שינוי שנקטע נטען ככישלון', () => {
+describe('revisions and stored versions', () => {
+  it('loads revision history and version snapshots; an interrupted revision loads as failed', () => {
     const stored = {
       ...readyProject,
       revisions: [
-        { id: 'r1', instruction: 'תגדיל', status: 'applied', message: null, createdAt: '' },
-        { id: 'r2', instruction: 'תקטין', status: 'working', message: null, createdAt: '' },
+        { id: 'r1', instruction: 'bigger', status: 'applied', message: null, createdAt: '' },
+        { id: 'r2', instruction: 'smaller', status: 'working', message: null, createdAt: '' },
       ],
       previousVersions: [{ code: '<html>v1</html>', chapters: readyProject.chapters }],
     }

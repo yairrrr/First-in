@@ -13,14 +13,14 @@ import type {
 import { MAX_TOKENS, MIN_TOKENS, OPTION_COUNT } from '../services/lessonGenerator'
 
 /**
- * שמירת מצב ב-localStorage. אין שרת ואין בסיס נתונים — ראה ARCHITECTURE.
+ * State persistence in localStorage. There is no server and no database.
  *
- * המפתח נושא מספר גרסה. אם שפת הנתונים תשתנה, מצב ישן לא ינסה להיטען
- * לתוך קוד שכבר לא מבין אותו.
+ * The key is versioned: when the data model changes incompatibly, old state
+ * must not be loaded into code that no longer understands it.
  */
 export const STORAGE_KEY = 'first-in/state/v1'
 
-/** ממשק מצומצם של localStorage, כדי שאפשר יהיה להזריק אחסון מזויף בבדיקות. */
+/** Minimal localStorage surface, so tests can inject a fake. */
 export interface StateStorage {
   getItem(key: string): string | null
   setItem(key: string, value: string): void
@@ -35,7 +35,7 @@ export function loadState(storage: StateStorage | undefined): AppState {
   try {
     raw = storage.getItem(STORAGE_KEY)
   } catch {
-    // דפדפן שחוסם אחסון. לא סיבה להפיל את האפליקציה.
+    // Storage access can throw (privacy settings). Start empty rather than crash.
     return EMPTY
   }
   if (!raw) return EMPTY
@@ -53,7 +53,7 @@ export function saveState(storage: StateStorage | undefined, state: AppState): v
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
-    // מכסת האחסון מלאה. הפרויקט ימשיך לעבוד, פשוט לא ישרוד רענון.
+    // Quota exceeded. The session keeps working; it just will not survive a reload.
   }
 }
 
@@ -62,7 +62,7 @@ function toLanguage(parsed: unknown): Language {
   return parsed.language === 'en' ? 'en' : 'he'
 }
 
-/** מצב שנשמר לפני שהיה XP נטען עם אפס — לא מפיל ולא ממציא. */
+/** State saved before XP existed loads with zero. */
 function toXp(parsed: unknown): number {
   if (!isRecord(parsed)) return 0
   const xp = parsed.xp
@@ -70,8 +70,8 @@ function toXp(parsed: unknown): number {
 }
 
 /**
- * המצב השמור בא מהדיסק ולא מהקוד שלנו, ולכן הוא נבדק ולא מונח.
- * פרויקט פגום נזרק, ולא מפיל את כל הרשימה.
+ * Stored state comes from disk, not from this code, so every field is validated.
+ * A corrupt project is dropped without discarding the rest.
  */
 function toProjects(parsed: unknown): Project[] {
   if (!isRecord(parsed) || !Array.isArray(parsed.projects)) return []
@@ -91,9 +91,9 @@ function toProject(candidate: unknown): Project | null {
   return {
     id: candidate.id,
     prompt: candidate.prompt,
-    // פרויקטים ותיקים נשמרו לפני שהשדה היה קיים. עבורם ברירת המחדל היא המודל.
+    // Projects saved before the field existed default to the real model.
     provider: candidate.provider === 'fixture' ? 'fixture' : 'ollama',
-    // בנייה שנקטעה באמצע ברענון דף לא תסתיים לעולם, ולכן היא נטענת ככישלון.
+    // A build interrupted by a reload can never finish, so it loads as failed.
     status: toStatus(candidate.status),
     code: typeof candidate.code === 'string' ? candidate.code : '',
     chapters: Array.isArray(candidate.chapters) ? candidate.chapters.flatMap(toChapter) : [],
@@ -102,7 +102,7 @@ function toProject(candidate: unknown): Project | null {
       ? candidate.previousVersions.flatMap(toVersion)
       : [],
     points: typeof candidate.points === 'number' ? candidate.points : 0,
-    error: candidate.status === 'building' ? 'הבנייה נקטעה כשהדף נטען מחדש.' : toError(candidate.error),
+    error: candidate.status === 'building' ? 'interrupted' : toError(candidate.error),
     createdAt: typeof candidate.createdAt === 'string' ? candidate.createdAt : '',
   }
 }
@@ -113,7 +113,7 @@ function toVersion(candidate: unknown): ProjectVersion[] {
   return [{ code: candidate.code, chapters }]
 }
 
-/** שינוי שנקטע ברענון לא יסתיים לעולם — נטען ככישלון, כמו בנייה. */
+/** A revision interrupted by a reload can never finish; it loads as failed. */
 function toRevision(candidate: unknown): Revision[] {
   if (!isRecord(candidate)) return []
   if (typeof candidate.id !== 'string' || typeof candidate.instruction !== 'string') return []
@@ -163,7 +163,7 @@ function toChapter(candidate: unknown): Chapter[] {
   ]
 }
 
-/** כותרת בפורמט הישן (מחרוזת) אינה ניתנת לתרגום; הפרק נזרק והפרויקט ייבנה מחדש. */
+/** Legacy string titles cannot be localized; such chapters are dropped. */
 function toTitle(candidate: unknown): ChapterTitle | null {
   if (!isRecord(candidate)) return null
   switch (candidate.kind) {
@@ -182,10 +182,7 @@ function toTitle(candidate: unknown): ChapterTitle | null {
   }
 }
 
-/**
- * שיעור פגום או בפורמט ישן נזרק ונוצר מחדש בכניסה הבאה לפרק.
- * עדיף על תרגיל שבור במסך.
- */
+/** A corrupt or legacy lesson is dropped and regenerated on the next visit. */
 function toLesson(candidate: unknown): Lesson | null {
   if (!isRecord(candidate)) return null
   if (typeof candidate.concept !== 'string' || !candidate.concept) return null

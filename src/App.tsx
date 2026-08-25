@@ -9,14 +9,14 @@ import logoMark from './assets/logo-mark.png'
 
 const LANGUAGE_LABELS: Record<Language, string> = { he: 'עברית', en: 'English' }
 
-/** מסגרת קבועה לכל המסכים. המסך עצמו נכנס ל-Outlet. */
+/** Application shell: header and the routed screen. */
 export function App() {
   const { state, dispatch } = useApp()
   const { t, language } = useT()
   const headerRef = useRef<HTMLElement>(null)
 
-  // גובה הכותרת נמדד ומפורסם כמשתנה CSS, כדי שמסך הפרויקט יוכל למלא
-  // בדיוק את מה שנשאר מגובה החלון — בכל רוחב מסך ובכל שפה.
+  // The header height is published as a CSS variable so the project screen
+  // can fill exactly the remaining viewport at any width and in both languages.
   useEffect(() => {
     const header = headerRef.current
     if (!header) return
@@ -28,7 +28,7 @@ export function App() {
     return () => observer.disconnect()
   }, [])
 
-  // כיוון הדף ושפתו נקבעים במסמך עצמו, לא ברכיב — כך גם הגלילה והפיסוק מתיישרים.
+  // Direction and language are set on the document so scrolling and punctuation follow.
   useEffect(() => {
     document.documentElement.lang = language
     document.documentElement.dir = language === 'he' ? 'rtl' : 'ltr'
@@ -36,14 +36,8 @@ export function App() {
 
   return (
     <div className="app">
-      {/* כתמי אור שטים ברקע. עומק בלי הסחה, נכבים ב-prefers-reduced-motion. */}
-      <div className="ambient" aria-hidden="true">
-        <div className="blob blob-purple" />
-        <div className="blob blob-cyan" />
-      </div>
-
       <header className="header" ref={headerRef}>
-        {/* שלושה אזורים שווי רוחב, כדי שהשם יישב במרכז אמיתי של המסך */}
+        {/* Three equal-width zones keep the wordmark truly centered */}
         <div className="header-side">
           <Link to="/" className="logo-link">
             <img src={logoMark} alt="First-In" className="logo-img" />

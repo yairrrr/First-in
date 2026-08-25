@@ -1,14 +1,12 @@
 /**
- * המודל עוטף את הקוד שהוא מחזיר בגדר markdown, גם כשמבקשים ממנו במפורש שלא.
- * אומת על שתי דגימות אמיתיות, ראה SPIKE-003.
- *
- * מקלף את הגדר אם היא קיימת, ומחזיר את הטקסט כמות שהוא אם לא.
+ * Models tend to wrap code in a markdown fence even when told not to.
+ * Removes the fence when present; returns the trimmed text unchanged otherwise.
  */
 export function stripCodeFence(text: string): string {
   const trimmed = text.trim()
   if (!trimmed.startsWith('```')) return trimmed
 
-  // שורה ראשונה היא הגדר עצמה, ואולי שם שפה אחריה.
+  // The first line is the fence itself, optionally followed by a language tag.
   const firstLineEnd = trimmed.indexOf('\n')
   if (firstLineEnd === -1) return trimmed
 

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useApp } from '../state/AppContext'
 import { translate, type StringKey, type Vars } from './strings'
 
-/** הדרך של רכיב לקבל מחרוזת בשפה הנוכחית. */
+/** Translation hook bound to the current UI language. */
 export function useT() {
   const { state } = useApp()
   const language = state.language

@@ -16,49 +16,49 @@ function providerReturning(text: string) {
 }
 
 describe('buildProject', () => {
-  it('מחזיר את ה-HTML שהמודל בנה', async () => {
-    const { provider } = providerReturning('<!DOCTYPE html><html><body>שלום</body></html>')
-    await expect(buildProject(provider, 'בנה משחק')).resolves.toContain('שלום')
+  it('returns the HTML the model produced', async () => {
+    const { provider } = providerReturning('<!DOCTYPE html><html><body>hello</body></html>')
+    await expect(buildProject(provider, 'build a game')).resolves.toContain('hello')
   })
 
-  it('מעביר את ההנחיה ואת הפרומפט של המשתמש', async () => {
+  it('sends the system prompt and the trimmed user prompt', async () => {
     const { provider, seen } = providerReturning('<!DOCTYPE html><html></html>')
-    await buildProject(provider, '  בנה משחק זיכרון  ')
+    await buildProject(provider, '  build a memory game  ')
 
     expect(seen[0].system).toBe(BUILD_SYSTEM_PROMPT)
-    expect(seen[0].prompt).toBe('בנה משחק זיכרון')
+    expect(seen[0].prompt).toBe('build a memory game')
   })
 
-  it('מקלף את גדר ה-markdown שהמודל מוסיף', async () => {
+  it('strips the markdown fence the model adds', async () => {
     const { provider } = providerReturning('```html\n<!DOCTYPE html><html></html>\n```')
-    await expect(buildProject(provider, 'בנה משחק')).resolves.toBe('<!DOCTYPE html><html></html>')
+    await expect(buildProject(provider, 'build a game')).resolves.toBe('<!DOCTYPE html><html></html>')
   })
 
-  it('נכשל בבירור כשהמודל החזיר טקסט ולא קוד', async () => {
-    const { provider } = providerReturning('בשמחה! הנה הסבר על משחקי זיכרון.')
-    await expect(buildProject(provider, 'בנה משחק')).rejects.toThrow(BuildError)
+  it('fails clearly when the model returns prose instead of code', async () => {
+    const { provider } = providerReturning('Sure! Here is an explanation of memory games.')
+    await expect(buildProject(provider, 'build a game')).rejects.toThrow(BuildError)
   })
 
-  it('אינו פונה למודל על פרומפט ריק', async () => {
+  it('does not call the model for an empty prompt', async () => {
     const { provider, seen } = providerReturning('<!DOCTYPE html><html></html>')
     await expect(buildProject(provider, '   ')).rejects.toMatchObject({ code: 'emptyPrompt' })
     expect(seen).toHaveLength(0)
   })
 
-  it('עובד מקצה לקצה מול הספק השמור', async () => {
-    const html = await buildProject(createFixtureProvider(), 'משחק זיכרון')
+  it('works end to end with the recorded provider', async () => {
+    const html = await buildProject(createFixtureProvider(), 'memory game')
     expect(html).toContain('<script>')
   })
 })
 
 describe('looksLikeHtml', () => {
-  it('מזהה מסמך HTML', () => {
+  it('recognizes an HTML document', () => {
     expect(looksLikeHtml('<!DOCTYPE html><html></html>')).toBe(true)
     expect(looksLikeHtml('\n  <html lang="he">')).toBe(true)
   })
 
-  it('דוחה טקסט חופשי, גם כשיש בו תגיות', () => {
-    expect(looksLikeHtml('הנה הקוד: <div>שלום</div>')).toBe(false)
+  it('rejects prose even when it contains tags', () => {
+    expect(looksLikeHtml('Here is the code: <div>hi</div>')).toBe(false)
     expect(looksLikeHtml('')).toBe(false)
   })
 })

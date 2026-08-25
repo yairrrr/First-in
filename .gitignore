@@ -6,10 +6,10 @@ dist/
 dist-ssr/
 build/
 
-# Environment variables — never committed
+# Environment variables
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Logs
 *.log
@@ -31,5 +31,5 @@ Thumbs.db
 # Test output
 coverage/
 
-# Internal planning docs — kept local only
+# Local planning notes (not part of the published repository)
 docs/

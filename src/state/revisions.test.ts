@@ -26,10 +26,10 @@ function readyProject(): Project {
   }
 }
 
-const revision: Revision = { id: 'r1', instruction: 'תגדיל', status: 'working', message: null, createdAt: '' }
+const revision: Revision = { id: 'r1', instruction: 'bigger', status: 'working', message: null, createdAt: '' }
 
 describe('mergeChapters', () => {
-  it('פרק עם אותה כותרת יורש התקדמות; שיעור נשמר רק אם הקוד זהה', () => {
+  it('inherits progress by title; keeps the lesson only for identical code', () => {
     const old = [fn('flipCard', 'same', { completed: true, attempts: 2, lesson })]
     const next = [fn('flipCard', 'same')]
     const merged = mergeChapters(old, next)
@@ -38,21 +38,21 @@ describe('mergeChapters', () => {
     expect(merged[0].lesson).toBe(lesson)
   })
 
-  it('קוד שהשתנה: ההתקדמות נשמרת, השיעור נוצר מחדש', () => {
+  it('keeps progress but drops the lesson when the code changed', () => {
     const old = [fn('flipCard', 'before', { completed: true, attempts: 1, lesson })]
     const merged = mergeChapters(old, [fn('flipCard', 'after')])
     expect(merged[0].completed).toBe(true)
     expect(merged[0].lesson).toBeNull()
   })
 
-  it('פרק חדש מתחיל מאפס, ופרק שנעלם לא משפיע', () => {
+  it('starts new chapters fresh and ignores removed ones', () => {
     const old = [fn('gone', 'x', { completed: true })]
     const merged = mergeChapters(old, [fn('fresh', 'y')])
     expect(merged).toHaveLength(1)
     expect(merged[0].completed).toBe(false)
   })
 
-  it('שני פרקים עם אותה כותרת מתאימים לפי הסדר, לא כפול', () => {
+  it('matches duplicate titles in order, never twice', () => {
     const old = [chapter('a', { title: { kind: 'wiring', n: 1 }, completed: true }), chapter('b', { title: { kind: 'wiring', n: 1 } })]
     const next = [chapter('c', { title: { kind: 'wiring', n: 1 } }), chapter('d', { title: { kind: 'wiring', n: 1 } })]
     const merged = mergeChapters(old, next)
@@ -60,8 +60,8 @@ describe('mergeChapters', () => {
   })
 })
 
-describe('זרימת שינוי', () => {
-  it('שינוי שהתחיל מופיע כ-working, והצלחה מחליפה קוד ושומרת גרסה קודמת', () => {
+describe('revision flow', () => {
+  it('marks a started revision as working; success swaps code and snapshots the previous version', () => {
     const s0 = reducer(initialState, { type: 'PROJECT_CREATED', project: readyProject() })
     const s1 = reducer(s0, { type: 'REVISION_STARTED', projectId: 'p1', revision })
     expect(s1.projects[0].revisions[0].status).toBe('working')
@@ -75,20 +75,20 @@ describe('זרימת שינוי', () => {
     expect(s2.projects[0].previousVersions[0].code).toBe('v1')
     expect(s2.projects[0].previousVersions[0].chapters[0].completed).toBe(true)
     expect(s2.projects[0].revisions[0].status).toBe('applied')
-    // אותו קוד לפרק → ההתקדמות והשיעור נשמרו
+    // identical chapter code → progress and lesson preserved
     expect(s2.projects[0].chapters[0].completed).toBe(true)
     expect(s2.projects[0].chapters[0].lesson).toBe(lesson)
   })
 
-  it('כישלון מסמן את השינוי ולא נוגע בקוד', () => {
+  it('marks a failed revision without touching the code', () => {
     const s0 = reducer(initialState, { type: 'PROJECT_CREATED', project: readyProject() })
     const s1 = reducer(s0, { type: 'REVISION_STARTED', projectId: 'p1', revision })
-    const s2 = reducer(s1, { type: 'REVISION_FAILED', projectId: 'p1', revisionId: 'r1', message: 'נפל' })
+    const s2 = reducer(s1, { type: 'REVISION_FAILED', projectId: 'p1', revisionId: 'r1', message: 'failed' })
     expect(s2.projects[0].code).toBe('v1')
-    expect(s2.projects[0].revisions[0]).toMatchObject({ status: 'failed', message: 'נפל' })
+    expect(s2.projects[0].revisions[0]).toMatchObject({ status: 'failed', message: 'failed' })
   })
 
-  it('חזרה אחורה משחזרת קוד ופרקים מהתמונה, גם אם השינוי מחק את הפרק', () => {
+  it('undo restores code and chapters from the snapshot even if the revision removed the chapter', () => {
     const s0 = reducer(initialState, { type: 'PROJECT_CREATED', project: readyProject() })
     const s1 = reducer(s0, { type: 'REVISION_STARTED', projectId: 'p1', revision })
     const s2 = reducer(s1, { type: 'REVISION_SUCCEEDED', projectId: 'p1', revisionId: 'r1', code: 'v2', chapters: [] })
@@ -100,7 +100,7 @@ describe('זרימת שינוי', () => {
     expect(s3.projects[0].chapters[0].lesson).toBe(lesson)
   })
 
-  it('פרק שהושלם אחרי השינוי נשאר מושלם גם אחרי חזרה אחורה', () => {
+  it('keeps a chapter completed after the revision completed across undo', () => {
     const current = [fn('initGame', 'new', { completed: true, attempts: 2 })]
     const snapshot = [fn('initGame', 'old'), fn('flipCard', 'x', { completed: true })]
     const restored = restoreChapters(current, snapshot)
@@ -109,13 +109,13 @@ describe('זרימת שינוי', () => {
     expect(restored[0].code).toBe('old')
   })
 
-  it('בלי גרסה קודמת — חזרה אחורה לא משנה דבר', () => {
+  it('is a no-op without a previous version', () => {
     const s0 = reducer(initialState, { type: 'PROJECT_CREATED', project: readyProject() })
     const s1 = reducer(s0, { type: 'REVISION_REVERTED', projectId: 'p1' })
     expect(s1).toBe(s0)
   })
 
-  it('המחסנית מוגבלת לחמש גרסאות', () => {
+  it('caps the version stack at five', () => {
     let s = reducer(initialState, { type: 'PROJECT_CREATED', project: readyProject() })
     for (let i = 0; i < 7; i++) {
       s = reducer(s, { type: 'REVISION_STARTED', projectId: 'p1', revision: { ...revision, id: `r${i}` } })

@@ -15,30 +15,30 @@ function jsonResponse(payload: unknown, ok = true, status = 200) {
 }
 
 describe('createOllamaProvider', () => {
-  it('פונה לנתיב הנכון ושולח את המודל, הפרומפט וההנחיה', async () => {
-    const { impl, calls } = stubFetch(() => jsonResponse({ response: 'שלום' }))
+  it('posts to /api/generate with model, prompt and system', async () => {
+    const { impl, calls } = stubFetch(() => jsonResponse({ response: 'hello' }))
     const provider = createOllamaProvider({ fetchImpl: impl })
 
-    const result = await provider.complete({ prompt: 'בנה משחק', system: 'החזר קוד בלבד' })
+    const result = await provider.complete({ prompt: 'build a game', system: 'code only' })
 
-    expect(result.text).toBe('שלום')
+    expect(result.text).toBe('hello')
     expect(calls[0].url).toBe('http://localhost:11434/api/generate')
     expect(calls[0].body).toEqual({
       model: OLLAMA_MODEL,
-      prompt: 'בנה משחק',
-      system: 'החזר קוד בלבד',
+      prompt: 'build a game',
+      system: 'code only',
       stream: false,
       think: false,
     })
   })
 
-  it('אינו מבקש שידור, כי ה-MVP אינו משתמש בו', async () => {
+  it('does not request streaming', async () => {
     const { impl, calls } = stubFetch(() => jsonResponse({ response: '' }))
-    await createOllamaProvider({ fetchImpl: impl }).complete({ prompt: 'שלום' })
+    await createOllamaProvider({ fetchImpl: impl }).complete({ prompt: 'hi' })
     expect(calls[0].body.stream).toBe(false)
   })
 
-  it('מכבד כתובת ומודל שהוזרקו', async () => {
+  it('honors an injected base URL and model', async () => {
     const { impl, calls } = stubFetch(() => jsonResponse({ response: '' }))
     const provider = createOllamaProvider({
       baseUrl: 'http://example.test:1234',
@@ -47,50 +47,50 @@ describe('createOllamaProvider', () => {
     })
 
     expect(provider.name).toBe('ollama:other')
-    await provider.complete({ prompt: 'שלום' })
+    await provider.complete({ prompt: 'hi' })
     expect(calls[0].url).toBe('http://example.test:1234/api/generate')
     expect(calls[0].body.model).toBe('other')
   })
 
-  it('מסביר בבירור כששרת המודל אינו זמין', async () => {
+  it('reports an unreachable server with a code', async () => {
     const { impl } = stubFetch(() => {
       throw new TypeError('fetch failed')
     })
     const provider = createOllamaProvider({ fetchImpl: impl })
 
-    await expect(provider.complete({ prompt: 'שלום' })).rejects.toThrow(OllamaError)
-    await expect(provider.complete({ prompt: 'שלום' })).rejects.toMatchObject({ code: 'unreachable' })
+    await expect(provider.complete({ prompt: 'hi' })).rejects.toThrow(OllamaError)
+    await expect(provider.complete({ prompt: 'hi' })).rejects.toMatchObject({ code: 'unreachable' })
   })
 
-  it('נכשל כשהשרת מחזיר קוד שגיאה', async () => {
+  it('fails on an HTTP error status', async () => {
     const { impl } = stubFetch(() => jsonResponse({}, false, 404))
     const provider = createOllamaProvider({ fetchImpl: impl })
-    await expect(provider.complete({ prompt: 'שלום' })).rejects.toMatchObject({ code: 'http', status: 404 })
+    await expect(provider.complete({ prompt: 'hi' })).rejects.toMatchObject({ code: 'http', status: 404 })
   })
 
-  it('נכשל כשהתשובה אינה בפורמט המצופה', async () => {
+  it('fails on an unexpected payload shape', async () => {
     const { impl } = stubFetch(() => jsonResponse({ nothing: true }))
     const provider = createOllamaProvider({ fetchImpl: impl })
-    await expect(provider.complete({ prompt: 'שלום' })).rejects.toMatchObject({ code: 'format' })
+    await expect(provider.complete({ prompt: 'hi' })).rejects.toMatchObject({ code: 'format' })
   })
 })
 
-describe('פלט מובנה', () => {
-  it('שולח סכמה כ-format רק כשהתבקשה', async () => {
+describe('structured output', () => {
+  it('sends the schema as format only when provided', async () => {
     const { impl, calls } = stubFetch(() => jsonResponse({ response: '{}' }))
     const provider = createOllamaProvider({ fetchImpl: impl })
     const schema = { type: 'object' }
 
-    await provider.complete({ prompt: 'שלום' })
+    await provider.complete({ prompt: 'hi' })
     expect(calls[0].body.format).toBeUndefined()
 
-    await provider.complete({ prompt: 'שלום', schema })
+    await provider.complete({ prompt: 'hi', schema })
     expect(calls[1].body.format).toEqual(schema)
   })
 
-  it('מכבה חשיבה בכל בקשה, כדי שהיא לא תבלע את התשובה', async () => {
+  it('disables model thinking on every request', async () => {
     const { impl, calls } = stubFetch(() => jsonResponse({ response: '' }))
-    await createOllamaProvider({ fetchImpl: impl }).complete({ prompt: 'שלום' })
+    await createOllamaProvider({ fetchImpl: impl }).complete({ prompt: 'hi' })
     expect(calls[0].body.think).toBe(false)
   })
 })

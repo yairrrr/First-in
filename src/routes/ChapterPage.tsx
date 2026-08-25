@@ -14,12 +14,12 @@ import type { StringKey } from '../i18n/strings'
 import { chapterTitleText } from '../i18n/chapterTitle'
 import type { AssembleExercise, Chapter, ChoiceExercise, Project } from '../state/types'
 
-/** אותיות האפשרויות בשאלה אמריקאית, לפי שפת הממשק. */
+/** Option labels for multiple-choice exercises, per UI language. */
 const OPTION_LETTERS = { he: ['א', 'ב', 'ג', 'ד'], en: ['A', 'B', 'C', 'D'] } as const
 
 /**
- * שלב למידה בודד, בשני מסכים בסגנון Mimo — ראה ADR-010:
- * קודם פסקת העיקרון, ואז התרגיל: הרכבת שורה או שאלה אמריקאית.
+ * A single learning step in two phases: the concept card first, then the
+ * exercise (tap-to-assemble or multiple choice).
  */
 export function ChapterPage() {
   const { id, step } = useParams()
@@ -38,7 +38,7 @@ export function ChapterPage() {
     )
   }
 
-  // ברמת הפתיחה מציגים כמה שפחות קוד — הנחיית המוצר. הקוד המלא זמין בלחיצה.
+  // At the intro tier the full chapter code is collapsed by default to keep the screen light.
   const collapseCode = chapter.lesson?.difficulty === 'intro'
 
   return (
@@ -96,16 +96,19 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
   const { loadLesson } = useProjectActions()
   const { t } = useT()
   const [error, setError] = useState<string | null>(null)
-  // המסך הראשון הוא העיקרון. פרק שכבר הושלם מדלג ישר לתרגיל הנעול.
+  // Completed chapters open directly on the locked exercise.
   const [phase, setPhase] = useState<'concept' | 'exercise'>('concept')
+  const chapterId = chapter.id
+  const completedOnEntry = chapter.completed
 
-  // איפוס המסך רק כשעוברים לפרק אחר באמת. תלות באובייקט הפרק כולו הייתה
-  // מחזירה את המשתמש למסך העיקרון אחרי כל תשובה, כי כל תשובה יוצרת אובייקט חדש.
+  // Reset only when navigating to a different chapter. Depending on the chapter
+  // object itself would reset the phase after every answer, since each answer
+  // produces a new object.
   useEffect(() => {
     setError(null)
-    setPhase(chapter.completed ? 'exercise' : 'concept')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapter.id])
+    setPhase(completedOnEntry ? 'exercise' : 'concept')
+    // `completedOnEntry` is intentionally read once per chapter.
+  }, [chapterId])
 
   useEffect(() => {
     if (chapter.lesson) return
@@ -118,8 +121,8 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
     }
   }, [project, chapter, loadLesson])
 
-  // ברגע שהפרק הושלם, השיעור הבא מתחיל להיווצר ברקע. בנקודה הזו ההתקדמות
-  // כבר מעודכנת, ולכן רמת הקושי שתיחתם על השיעור הבא מדויקת.
+  // Once the chapter is completed, prefetch the next lesson. Progress is already
+  // updated at this point, so the difficulty stamped on the next lesson is correct.
   useEffect(() => {
     if (!chapter.completed) return
     const target = nextChapterToPrefetch(project, chapter.id)
@@ -163,27 +166,27 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
   if (phase === 'concept') {
     return (
       <div className="lesson">
-      <Stepper steps={steps} current={currentStep} />
-      <div className="concept-card">
-        <span className="concept-label">{t('chapter.concept')}</span>
-        <p className="concept-text">
-          <RichText text={chapter.lesson.concept} />
-        </p>
-        {chapter.lesson.example && (
-          <div className="example">
-            <span className="example-label">{t('chapter.example')}</span>
-            <CodeBlock
-              code={chapter.lesson.example}
-              language={languageForChapter(chapter.title)}
-              compact
-            />
-          </div>
-        )}
-        <button type="button" className="primary" onClick={() => setPhase('exercise')}>
-          {t('chapter.toExercise')}
-          <Icon name="forward" size={15} />
-        </button>
-      </div>
+        <Stepper steps={steps} current={currentStep} />
+        <div className="concept-card">
+          <span className="concept-label">{t('chapter.concept')}</span>
+          <p className="concept-text">
+            <RichText text={chapter.lesson.concept} />
+          </p>
+          {chapter.lesson.example && (
+            <div className="example">
+              <span className="example-label">{t('chapter.example')}</span>
+              <CodeBlock
+                code={chapter.lesson.example}
+                language={languageForChapter(chapter.title)}
+                compact
+              />
+            </div>
+          )}
+          <button type="button" className="primary" onClick={() => setPhase('exercise')}>
+            {t('chapter.toExercise')}
+            <Icon name="forward" size={15} />
+          </button>
+        </div>
       </div>
     )
   }
@@ -213,8 +216,8 @@ function LessonBlock({ project, chapter }: { project: Project; chapter: Chapter 
 }
 
 /**
- * רגע ההצלחה חייב להיראות: הודעת XP, ואם עברנו סף — חגיגת דרגה.
- * מחושב לפני ה-dispatch, מאותם חוקים של ה-reducer.
+ * Success feedback: an XP toast and, when a threshold is crossed, a rank-up toast.
+ * Computed before dispatch with the same rules the reducer applies.
  */
 function useCelebrate() {
   const { state } = useApp()
@@ -248,7 +251,7 @@ function useCelebrate() {
   }
 }
 
-/** שאלה אמריקאית. פרק שהושלם מוצג נעול עם התשובה הנכונה מסומנת. */
+/** Multiple choice. A completed chapter renders locked with the correct option marked. */
 function ChoiceBlock({
   project,
   chapter,
@@ -313,8 +316,8 @@ function ChoiceBlock({
 }
 
 /**
- * תרגיל ההרכבה: משבצות מעורבבות, לחיצה מוסיפה לשורת התשובה לפי הסדר.
- * לחיצה על משבצת בשורה מחזירה אותה לבנק. כשכולן הונחו — בדיקה אוטומטית.
+ * Tap-to-assemble. Tapping a bank tile appends it to the answer row; tapping a
+ * placed tile returns it. The answer is checked as soon as every tile is placed.
  */
 function AssembleBlock({
   project,
@@ -328,14 +331,14 @@ function AssembleBlock({
   const { answerQuestion } = useProjectActions()
   const { t } = useT()
   const celebrate = useCelebrate()
-  // המשבצות מזוהות לפי מיקומן המקורי, כדי ששתי משבצות זהות לא יתבלבלו.
+  // Tiles are tracked by original index so duplicate tokens stay distinguishable.
   const [placed, setPlaced] = useState<number[]>([])
   const [wrongOnce, setWrongOnce] = useState(false)
-  // מבחין בין "נפתר הרגע" לבין "הגעתי לפרק שכבר הושלם בעבר" — המשוב שונה.
+  // Distinguishes "solved just now" from "arrived at an already completed chapter".
   const [solvedNow, setSolvedNow] = useState(false)
 
   const locked = chapter.completed
-  const shuffled = useMemo(() => shuffleIndexes(exercise.tokens), [chapter.id, exercise.tokens])
+  const shuffled = useMemo(() => shuffleIndexes(exercise.tokens), [exercise.tokens])
 
   useEffect(() => {
     setPlaced([])
@@ -349,7 +352,7 @@ function AssembleBlock({
     setPlaced(next)
     if (next.length < exercise.tokens.length) return
 
-    // ההשוואה לפי ערכי המשבצות, כך ששתי משבצות זהות מתקבלות בכל סדר ביניהן.
+    // Compare by token value, so identical tokens are accepted in either order.
     const assembled = next.map((i) => exercise.tokens[i])
     const correct = assembled.every((token, i) => token === exercise.tokens[i])
     if (correct) celebrate(chapter, chapter.attempts)
@@ -388,7 +391,7 @@ function AssembleBlock({
             key={tokenIndex}
             type="button"
             className="tile placed-tile"
-            disabled={locked || chapter.completed}
+            disabled={locked}
             onClick={() => unplace(tokenIndex)}
           >
             {exercise.tokens[tokenIndex]}
@@ -458,7 +461,7 @@ function Feedback({
   return null
 }
 
-/** ערבוב יציב לפרק: מבטיח שהסדר המוצג שונה מהסדר הנכון. */
+/** Shuffles token indexes, guaranteeing the displayed order differs from the answer. */
 function shuffleIndexes(tokens: string[]): number[] {
   const indexes = tokens.map((_, i) => i)
   for (let attempt = 0; attempt < 10; attempt++) {

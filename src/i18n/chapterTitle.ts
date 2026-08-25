@@ -1,7 +1,7 @@
 import type { Chapter, ChapterTitle } from '../state/types'
 import { translate, type Language } from './strings'
 
-/** מציג כותרת פרק מובנית בשפת הממשק. */
+/** Renders a structured chapter title in the given language. */
 export function formatChapterTitle(
   language: Language,
   title: ChapterTitle,

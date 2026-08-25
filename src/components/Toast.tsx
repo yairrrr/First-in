@@ -1,16 +1,13 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
 
-/**
- * הודעות קצרות שצפות ונעלמות לבד: "+15 XP", "עלית דרגה".
- * רגעי ההצלחה הם הלב של מוצר משחקי — הם חייבים להיראות.
- */
+/** Transient notifications ("+15 XP", rank up). */
 
 export interface ToastInput {
   title: string
   detail?: string
   icon?: IconName
-  /** הודעת חגיגה מקבלת עיצוב בולט יותר. */
+  /** Celebration tone gets a more prominent style. */
   tone?: 'default' | 'celebrate'
 }
 
@@ -58,6 +55,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export function useToast(): ToastApi {
   const api = useContext(ToastContext)
-  if (!api) throw new Error('useToast נקרא מחוץ ל-ToastProvider')
+  if (!api) throw new Error('useToast must be used within ToastProvider')
   return api
 }

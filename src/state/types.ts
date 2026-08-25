@@ -1,51 +1,51 @@
-// שפת הנתונים של שכבת ה-state.
-// כל מה שהאפליקציה יודעת מתואר כאן, ושום דבר אחר לא מחזיק מידע.
+// Data model of the state layer. Everything the app knows lives in `AppState`;
+// no other module holds application data.
 
 export type ProjectStatus = 'building' | 'ready' | 'failed'
 
-/** שלוש מדרגות קושי, נגזרות מההתקדמות — ראה ADR-009. */
+/** Difficulty tiers. Derived from the learner's global rank, see rank.ts. */
 export type LessonDifficulty = 'intro' | 'core' | 'deep'
 
-/** שאלה אמריקאית. המבנה מחייב, ראה סעיף 10 ב-PRD. */
+/** Multiple-choice exercise: exactly four options, one correct answer. */
 export interface ChoiceExercise {
   kind: 'choice'
   question: string
   options: string[]
-  /** מיקום התשובה הנכונה במערך, החל מאפס. */
+  /** Zero-based index of the correct option. */
   correctIndex: number
 }
 
 /**
- * תרגיל הרכבה בסגנון Mimo: משבצות טקסט שנלחצות לפי הסדר
- * ומרכיבות שורת קוד אמיתית מהפרויקט. ראה ADR-010.
+ * Tap-to-assemble exercise: the learner taps shuffled tokens in order to
+ * rebuild a real line from the project's code.
  */
 export interface AssembleExercise {
   kind: 'assemble'
-  /** מה השורה שמרכיבים עושה, במילים. */
+  /** Plain-language description of what the assembled line does. */
   instruction: string
-  /** המשבצות בסדר הנכון. המסך מערבב אותן לפני ההצגה. */
+  /** Tokens in the correct order. The UI shuffles them before display. */
   tokens: string[]
 }
 
 export type Exercise = ChoiceExercise | AssembleExercise
 
-/** שיעור של פרק: פסקת עיקרון קצרצרה, ואז תרגיל. נוצר כשהמשתמש פותח את הפרק. */
+/** A chapter lesson: a short concept paragraph, a code example, then an exercise. */
 export interface Lesson {
-  /** הרמה שבה נוצר השיעור. קובעת גם כמה קוד מוצג במסך. */
+  /** Difficulty the lesson was generated at. Also controls how much code the chapter screen shows. */
   difficulty: LessonDifficulty
-  /** ההסבר הקצר על עיקרון הקוד — המסך הראשון של השיעור. */
+  /** The concept paragraph shown before the exercise. */
   concept: string
   /**
-   * שורה עד שלוש שורות אמיתיות מהקוד שמדגימות את העיקרון.
-   * מי שברמה נמוכה לא יודע תחביר — חייבים להראות, לא רק לספר.
+   * One to three real lines from the chapter code that demonstrate the concept.
+   * Beginners may not know any syntax, so the concept must be shown, not just told.
    */
   example: string
   exercise: Exercise
 }
 
 /**
- * כותרת פרק כמבנה ולא כמחרוזת, כדי שתוצג בשפת הממשק הנוכחית
- * ולא בשפה שבה הפרויקט נבנה.
+ * Chapter titles are structured rather than pre-rendered strings so they can be
+ * displayed in the current UI language, not the language active at build time.
  */
 export type ChapterTitle =
   | { kind: 'markup' }
@@ -53,40 +53,40 @@ export type ChapterTitle =
   | { kind: 'function'; name: string }
   | { kind: 'wiring'; n: number }
 
-/** פרק למידה אחד: פיסת קוד מהפרויקט של המשתמש, ומה שהוא עשה איתה. */
+/** One learning chapter: a slice of the generated project and the learner's progress on it. */
 export interface Chapter {
   id: string
   title: ChapterTitle
-  /** יחידות קטנות שנבלעו בפרק כי היו קצרות מדי. הכותרת מצהירה עליהן. */
+  /** Small units merged into this chapter because they were too short to stand alone. Surfaced in the title. */
   extraUnits: number
-  /** החלק מתוך הקוד שנבנה שהפרק הזה מלמד. */
+  /** The slice of generated code this chapter teaches. */
   code: string
   completed: boolean
-  /** נוצר לפי דרישה, ונשמר כדי שלא ייווצר שוב בכל כניסה לפרק. */
+  /** Generated on demand and cached so the model is not called again on every visit. */
   lesson: Lesson | null
-  /** כמה פעמים נענתה השאלה. משמש למדד "נכון מהניסיון הראשון" שבסעיף 9 ב-PRD. */
+  /** Number of answers submitted. Drives the "correct on first try" metric. */
   attempts: number
 }
 
 export type RevisionStatus = 'working' | 'applied' | 'failed'
 
 /**
- * הערה אחת בשיחה על הפרויקט: "תגדיל את הכפתורים", "תוסיף טיימר".
- * המודל מקבל את הקוד הנוכחי ומחזיר גרסה מעודכנת.
+ * One instruction in the conversation about a built project ("make the buttons bigger").
+ * The model receives the current code and returns an updated version.
  */
 export interface Revision {
   id: string
   instruction: string
   status: RevisionStatus
-  /** הודעת שגיאה לתצוגה, כשנכשל. */
+  /** Display message when the revision failed. */
   message: string | null
   createdAt: string
 }
 
-/** כמה גרסאות קודמות שומרים לחזרה אחורה. מוגבל בגלל localStorage. */
+/** Number of previous versions kept for undo. Bounded because state lives in localStorage. */
 export const MAX_PREVIOUS_VERSIONS = 5
 
-/** תמונת מצב של גרסה: הקוד והפרקים יחד, כדי שחזרה אחורה תשחזר גם התקדמות. */
+/** Snapshot of a version: code and chapters together, so undo restores learning progress too. */
 export interface ProjectVersion {
   code: string
   chapters: Chapter[]
@@ -94,20 +94,20 @@ export interface ProjectVersion {
 
 export interface Project {
   id: string
-  /** מה שהמשתמש ביקש, כלשונו. */
+  /** The user's original request, verbatim. */
   prompt: string
-  /** השיחה על הפרויקט אחרי הבנייה, מהישן לחדש. */
+  /** Revision history after the initial build, oldest first. */
   revisions: Revision[]
-  /** גרסאות קודמות, מהישנה לחדשה, לחזרה אחורה. */
+  /** Previous versions, oldest first, for undo. */
   previousVersions: ProjectVersion[]
-  /** הספק שבנה את הפרויקט. השיעורים חייבים להגיע מאותו מקום. */
+  /** Provider that built the project. Lessons must come from the same source. */
   provider: 'ollama' | 'fixture'
   status: ProjectStatus
-  /** קוד ה-HTML שנבנה. ריק כל עוד הבנייה לא הסתיימה. */
+  /** Generated HTML. Empty until the build completes. */
   code: string
   chapters: Chapter[]
   points: number
-  /** הודעת השגיאה שהוצגה למשתמש כשהבנייה נכשלה. */
+  /** Display message when the build failed. */
   error: string | null
   /** ISO 8601. */
   createdAt: string
@@ -117,9 +117,9 @@ export type Language = 'he' | 'en'
 
 export interface AppState {
   projects: Project[]
-  /** ניסיון מצטבר של המשתמש, חוצה פרויקטים. קובע את הדרגה — ראה rank.ts. */
+  /** Accumulated experience across all projects. Determines the rank, see rank.ts. */
   xp: number
-  /** שפת הממשק והשיעורים. */
+  /** UI and lesson language. */
   language: Language
 }
 

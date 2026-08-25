@@ -1,14 +1,13 @@
 import { MAX_PREVIOUS_VERSIONS, type Action, type AppState, type Chapter, type Project } from './types'
 import { xpForAnswer } from './rank'
 
-/** נקודות על פרק שנענה נכון בניסיון הראשון. */
+/** Project points awarded when a chapter is completed. */
 export const POINTS_PER_CHAPTER = 10
 
 export const initialState: AppState = { projects: [], xp: 0, language: 'he' }
 
 /**
- * הפונקציה היחידה שמשנה מצב באפליקציה.
- * מקבלת מצב ופעולה, ומחזירה מצב חדש. אינה קוראת לשרת ואינה משנה דבר במקום.
+ * The only function that changes application state. Pure: no I/O, no mutation.
  */
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -31,7 +30,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return updateProject(state, action.projectId, (project) => ({
         ...project,
         code: action.code,
-        // הקוד השתנה, אבל מה שכבר נלמד לא נמחק: פרקים שנשארו זהים שומרים התקדמות.
+        // The code changed, but progress on chapters that stayed the same is kept.
         chapters: mergeChapters(project.chapters, action.chapters),
         previousVersions: [
           ...project.previousVersions,
@@ -59,14 +58,14 @@ export function reducer(state: AppState, action: Action): AppState {
         return {
           ...project,
           code: previous.code,
-          // הפרקים חוזרים כפי שהיו, אבל מה שהושלם בינתיים על פרק זהה לא נמחק.
+          // Chapters come back from the snapshot; completions made since are not lost.
           chapters: restoreChapters(project.chapters, previous.chapters),
           previousVersions: project.previousVersions.slice(0, -1),
         }
       })
 
     case 'BUILD_STARTED':
-      // בנייה חוזרת אחרי כישלון: הפרויקט חוזר לנקודת ההתחלה, אותו פרומפט.
+      // Rebuild after a failure: same prompt, fresh state.
       return updateProject(state, action.projectId, (project) => ({
         ...project,
         status: 'building',
@@ -105,25 +104,25 @@ export function reducer(state: AppState, action: Action): AppState {
         const chapter = project.chapters.find((c) => c.id === action.chapterId)
         if (!chapter) return project
 
-        // פרק שהושלם סגור. תשובה חוזרת בו לא נספרת — אחרת ביקור חוזר היה
-        // הורס רטרואקטיבית את מדד "נכון מהניסיון הראשון" של סעיף 9.
+        // A completed chapter is closed. Counting further answers would retroactively
+        // corrupt the "correct on first try" metric.
         if (chapter.completed) return project
 
-        // כל ניסיון נספר, גם שגוי. המדד בסעיף 9 ב-PRD הוא "נכון מהניסיון הראשון".
+        // Every attempt counts, including wrong ones.
         const chapters = project.chapters.map((c) =>
           c.id === action.chapterId
             ? { ...c, attempts: c.attempts + 1, completed: c.completed || action.correct }
             : c,
         )
 
-        // נקודות רק על המעבר הראשון מהלא-הושלם להושלם.
+        // Points only on the transition to completed.
         const earned = action.correct && !chapter.completed ? POINTS_PER_CHAPTER : 0
 
         return { ...project, points: project.points + earned, chapters }
       })
 
-      // תשובה נכונה שסגרה פרק מזכה גם ב-XP גלובלי, לפי רמת השאלה שנענתה.
-      // ה-XP הוא מה שמעלה את דרגת המשתמש, חוצה פרויקטים — ראה rank.ts.
+      // A correct answer that completes a chapter also earns global XP,
+      // based on the difficulty the lesson was generated at.
       if (!action.correct || withProject === state) return withProject
       const answered = withProject.projects
         .find((p) => p.id === action.projectId)
@@ -136,9 +135,10 @@ export function reducer(state: AppState, action: Action): AppState {
 }
 
 /**
- * הקוד השתנה והפרקים חולקו מחדש. פרק חדש שיש לו "תאום" בישן — אותה כותרת
- * (אותה פונקציה, אותו בורר, אותו אזור) — יורש את ההתקדמות. השיעור נשמר רק
- * אם הקוד של הפרק זהה; אם השתנה, ייווצר שיעור חדש על הקוד החדש.
+ * After a revision the code is re-split into chapters. A new chapter with a
+ * matching title (same function, selector or zone) inherits progress from its
+ * predecessor. The cached lesson is kept only if the chapter code is identical;
+ * otherwise a new lesson is generated for the new code.
  */
 export function mergeChapters(previous: Chapter[], next: Chapter[]): Chapter[] {
   const remaining = [...previous]
@@ -156,8 +156,8 @@ export function mergeChapters(previous: Chapter[], next: Chapter[]): Chapter[] {
 }
 
 /**
- * חזרה לגרסה קודמת: הפרקים של התמונה חוזרים במלואם, כולל שיעורים.
- * פרק שהושלם אחרי השינוי ויש לו תאום בתמונה — ההשלמה נשמרת גם אחרי החזרה.
+ * Undo: restore the snapshot's chapters (including cached lessons). A chapter
+ * completed after the revision keeps its completion if the snapshot has a twin.
  */
 export function restoreChapters(current: Chapter[], snapshot: Chapter[]): Chapter[] {
   const remaining = [...current]
@@ -174,7 +174,7 @@ function sameTitle(a: Chapter, b: Chapter): boolean {
   return JSON.stringify(a.title) === JSON.stringify(b.title)
 }
 
-/** אחוז הפרקים שהושלמו. פרויקט ללא פרקים הוא 0. */
+/** Percentage of completed chapters. A project without chapters is 0. */
 export function progressPercent(project: Project): number {
   if (project.chapters.length === 0) return 0
   const done = project.chapters.filter((c) => c.completed).length
@@ -182,8 +182,8 @@ export function progressPercent(project: Project): number {
 }
 
 /**
- * המדד הראשי של סעיף 9 ב-PRD: כמה מהפרקים שהושלמו נענו נכון מהניסיון הראשון.
- * פרק שהושלם עם ניסיון אחד בדיוק — התשובה הראשונה בו הייתה נכונה.
+ * Primary learning metric: how many completed chapters were answered correctly
+ * on the first attempt (exactly one attempt recorded).
  */
 export function firstTryStats(project: Project): { firstTry: number; completed: number } {
   const completed = project.chapters.filter((c) => c.completed)
@@ -200,8 +200,7 @@ function updateProject(
 ): AppState {
   const projects = state.projects.map((p) => (p.id === projectId ? change(p) : p))
 
-  // אם שום פרויקט לא הוחלף בפועל, מוחזר המצב המקורי עצמו.
-  // React משווה זהות, ואובייקט חדש עם תוכן זהה היה גורר רינדור מיותר.
+  // Preserve identity when nothing changed, so React does not re-render for a no-op.
   const untouched = projects.every((project, index) => project === state.projects[index])
   return untouched ? state : { ...state, projects }
 }

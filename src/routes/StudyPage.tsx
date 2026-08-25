@@ -11,14 +11,14 @@ import { useT } from '../i18n/useT'
 import { chapterTitleText } from '../i18n/chapterTitle'
 import type { ChapterTitle } from '../state/types'
 
-/** אייקון לפי סוג הפרק — שפה ויזואלית אחת לכל האפליקציה. */
+/** Icon per chapter kind, shared across the app. */
 export function iconForChapter(title: ChapterTitle): IconName {
   if (title.kind === 'markup') return 'layout'
   if (title.kind === 'css') return 'palette'
   return 'braces'
 }
 
-/** Your Study — מפת המסע: תחנה לכל פרק, קו שמחבר ביניהן. חדר נפרד, ראה ADR-003. */
+/** Study map: one station per chapter, connected in build order. */
 export function StudyPage() {
   const { id } = useParams()
   const { state } = useApp()
@@ -26,14 +26,15 @@ export function StudyPage() {
   const { t, language } = useT()
   const project = state.projects.find((candidate) => candidate.id === id)
 
-  // מי שנכנס למפה בדרך כלל ימשיך לפרק הבא בתור. השיעור שלו נוצר כבר עכשיו
-  // ברקע, כדי שהכניסה לפרק תהיה מיידית במקום רבע דקה של המתנה.
+  // Visitors usually continue to the next chapter in line; generating its lesson
+  // now makes opening it instant instead of a model round-trip.
+  const projectId = project?.id
   useEffect(() => {
     if (!project || project.status !== 'ready') return
     const target = nextChapterToPrefetch(project)
     if (target) void loadLesson(project, target)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project?.id])
+    // Runs once per project; `project` and `loadLesson` change on every state update.
+  }, [projectId])
 
   if (!project || project.status !== 'ready') {
     return (
@@ -48,9 +49,9 @@ export function StudyPage() {
   const percent = progressPercent(project)
   const { firstTry, completed } = firstTryStats(project)
   const left = project.chapters.length - completed
-  // התחנה הבאה בתור: הפרק הראשון שטרם הושלם.
+  // The next station: the first chapter not yet completed.
   const nextIndex = project.chapters.findIndex((chapter) => !chapter.completed)
-  // ה-XP שפרק פתוח יזכה בו אם ייענה נכון מיד — לפי הדרגה הנוכחית.
+  // XP an open chapter yields for a first-try answer at the current rank.
   const reward = xpForAnswer(rankForXp(state.xp).difficulty, 1)
 
   return (
