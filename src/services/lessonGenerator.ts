@@ -72,7 +72,7 @@ const DIFFICULTY_PROMPTS: Record<LessonDifficulty, string> = {
     'Do not mention data structures, patterns, or theory by name.',
   ].join(' '),
   deep: [
-    'The learner is experienced and wants a real challenge — but a readable one.',
+    'The learner is experienced and wants a real challenge, but a readable one.',
     'Ask about one concrete consequence: what changes if one specific line is removed or altered.',
     'State the situation in plain words first, then the question. Still at most 15 words.',
   ].join(' '),

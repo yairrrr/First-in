@@ -29,7 +29,7 @@ const validAssemble = {
 const asChoice = (value: unknown) => parseLesson('choice', 'core', JSON.stringify(value))
 const asAssemble = (value: unknown) => parseLesson('assemble', 'intro', JSON.stringify(value))
 
-describe('parseLesson — multiple choice', () => {
+describe('parseLesson: multiple choice', () => {
   it('accepts a valid lesson and stamps the difficulty', () => {
     const lesson = asChoice(validChoice)
     expect(lesson.difficulty).toBe('core')
@@ -58,7 +58,7 @@ describe('parseLesson — multiple choice', () => {
   })
 })
 
-describe('parseLesson — assemble', () => {
+describe('parseLesson: assemble', () => {
   it('accepts a valid exercise and trims tokens', () => {
     const lesson = asAssemble(validAssemble)
     expect(lesson.difficulty).toBe('intro')

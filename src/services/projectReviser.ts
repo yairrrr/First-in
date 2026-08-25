@@ -13,7 +13,7 @@ export const REVISE_SYSTEM_PROMPT = [
   'You are editing an existing single-file HTML app that the user already built and is looking at.',
   'Apply exactly the change the user asks for, and nothing else.',
   'Keep everything unrelated to the request identical: structure, names, styles, behavior, text.',
-  'Return the COMPLETE updated HTML file — markup, <style> and <script> — as one file.',
+  'Return the COMPLETE updated HTML file (markup, <style> and <script>) as one file.',
   'Do not write explanations, notes, or markdown fences. Output only the file.',
 ].join(' ')
 

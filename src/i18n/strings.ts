@@ -109,7 +109,7 @@ const he = {
   'project.elapsed': '{seconds} שניות עברו',
   'project.tip.1': 'בינתיים: המודל כותב HTML, CSS ו-JavaScript בקובץ אחד.',
   'project.tip.2': 'כשיסיים, הקוד יתפצל אוטומטית לפרקי למידה.',
-  'project.tip.3': 'הפרק הראשון יהיה תמיד המבנה של העמוד — הכי קל להתחיל ממנו.',
+  'project.tip.3': 'הפרק הראשון יהיה תמיד המבנה של העמוד, הכי קל להתחיל ממנו.',
 
   // Study map
   'study.summary.points': 'נקודות',
@@ -125,7 +125,7 @@ const he = {
   'toast.xpDetail': 'עוד {left} XP לדרגה הבאה',
   'toast.rankUp': 'עליתם דרגה!',
   'toast.rankUpDetail': 'דרגה {level} · {name}',
-  'toast.topRank': 'הדרגה העליונה — כל הכבוד',
+  'toast.topRank': 'הדרגה העליונה. כל הכבוד',
   'toast.downloaded': 'הקובץ ירד',
 
   // Revisions
@@ -139,7 +139,7 @@ const he = {
   'revise.undo': 'חזרה לגרסה הקודמת',
   'revise.version': 'גרסה {n}',
   'revise.empty': 'עדיין לא ביקשתם שינויים. כותבים כאן מה לשפר, כמו שמדברים עם מפתח.',
-  'revise.hint': 'הפרקים במפה מתעדכנים לפי הקוד החדש. מה שכבר נלמד ולא השתנה — נשמר.',
+  'revise.hint': 'הפרקים במפה מתעדכנים לפי הקוד החדש. מה שכבר נלמד ולא השתנה נשמר.',
   'toast.revised': 'הפרויקט עודכן',
   'toast.revisedDetail': '{count} פרקים במפה',
   'toast.reverted': 'חזרתם לגרסה הקודמת',
@@ -246,7 +246,7 @@ const en: Record<StringKey, string> = {
   'project.elapsed': '{seconds} seconds elapsed',
   'project.tip.1': 'Meanwhile: the model writes HTML, CSS and JavaScript in a single file.',
   'project.tip.2': 'When it finishes, the code is split into learning chapters automatically.',
-  'project.tip.3': 'The first chapter is always the page structure — the easiest place to start.',
+  'project.tip.3': 'The first chapter is always the page structure, the easiest place to start.',
 
   'study.summary.points': 'points',
   'study.summary.firstTry': 'first try',
@@ -260,7 +260,7 @@ const en: Record<StringKey, string> = {
   'toast.xpDetail': '{left} XP to the next rank',
   'toast.rankUp': 'Rank up!',
   'toast.rankUpDetail': 'Rank {level} · {name}',
-  'toast.topRank': 'Top rank — well done',
+  'toast.topRank': 'Top rank. Well done',
   'toast.downloaded': 'File downloaded',
 
   'revise.open': 'Keep working',

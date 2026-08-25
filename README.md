@@ -12,7 +12,7 @@ Correct answers earn XP; your rank determines the difficulty of new lessons.
 
 - Prompt → self-contained HTML app, rendered live and downloadable as a file
 - Conversational revisions: describe a change, the model rewrites the project; history and undo included
-- Deterministic chapter splitting (markup, styles, functions) — no model involved
+- Deterministic chapter splitting (markup, styles, functions), with no model involved
 - Two-phase micro-lessons: concept and example first, then a tap-to-assemble or multiple-choice exercise
 - Global learner rank with XP; difficulty adapts to rank, starting with plain language and minimal code
 - Hebrew and English UI with a language switch; gender-neutral Hebrew copy
