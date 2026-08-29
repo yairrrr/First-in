@@ -1,5 +1,7 @@
 # First-In
 
+**[Live site and setup guide](https://yairrrr.github.io/First-in/)**
+
 Build an app from a prompt, then learn the code you just built.
 
 First-In is a browser-only learning environment. You describe a small app or
